@@ -100,6 +100,7 @@ class TestDeduplication(unittest.TestCase):
         """Test delay_days calculation."""
         event = CongressTradeEvent(
             event_id="test",
+            source="house_stock_watcher",
             ticker="HAL",
             transaction_type="BUY",
             trade_date=date(2021, 1, 1),
@@ -114,6 +115,7 @@ class TestDeduplication(unittest.TestCase):
         """Test amount_mid calculation."""
         event = CongressTradeEvent(
             event_id="test",
+            source="house_stock_watcher",
             ticker="HAL",
             transaction_type="BUY",
             amount_low=1000,

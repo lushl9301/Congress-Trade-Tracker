@@ -117,10 +117,19 @@ class TestFinancialModelingPrepSource:
         source = FinancialModelingPrepSource()
         assert source.get_name() == "financial_modeling_prep"
 
-    def test_dummy_api_key_warning(self, caplog):
+    def test_dummy_api_key_warning(self):
         """Test that dummy API key produces warning."""
+        import logging
+        from loguru import logger
+
+        # Capture loguru output
+        captured = []
+        logger.add(lambda msg: captured.append(msg), level="WARNING")
+
         source = FinancialModelingPrepSource(api_key="DUMMY_FMP_API_KEY_REPLACE_ME")
-        assert "DUMMY API key" in caplog.text
+
+        # Check that warning was logged
+        assert any("DUMMY API key" in str(msg) for msg in captured)
 
     def test_is_available_with_dummy_key(self):
         """Test that source is not available with dummy API key."""

@@ -19,6 +19,7 @@ class TestScoring(unittest.TestCase):
     def test_ignore_missing_delay(self):
         """Test that events with missing delay are ignored."""
         event = CongressTradeEvent(
+            source="house_stock_watcher",
             event_id="test",
             ticker="HAL",
             transaction_type="BUY",
@@ -34,6 +35,7 @@ class TestScoring(unittest.TestCase):
     def test_ignore_delay_too_long(self):
         """Test that events with delay > max are ignored."""
         event = CongressTradeEvent(
+            source="house_stock_watcher",
             event_id="test",
             ticker="HAL",
             transaction_type="BUY",
@@ -49,6 +51,7 @@ class TestScoring(unittest.TestCase):
     def test_ignore_amount_too_small(self):
         """Test that events with amount < min are ignored."""
         event = CongressTradeEvent(
+            source="house_stock_watcher",
             event_id="test",
             ticker="HAL",
             transaction_type="BUY",
@@ -64,6 +67,7 @@ class TestScoring(unittest.TestCase):
     def test_strong_buy_signal(self):
         """Test that high-scoring event generates STRONG BUY."""
         event = CongressTradeEvent(
+            source="house_stock_watcher",
             event_id="test",
             ticker="HAL",
             transaction_type="BUY",
@@ -84,6 +88,7 @@ class TestScoring(unittest.TestCase):
     def test_normal_buy_signal(self):
         """Test that medium-scoring event generates NORMAL BUY."""
         event = CongressTradeEvent(
+            source="house_stock_watcher",
             event_id="test",
             ticker="HAL",
             transaction_type="BUY",
@@ -105,6 +110,7 @@ class TestScoring(unittest.TestCase):
     def test_watch_signal(self):
         """Test that low-scoring event generates WATCH."""
         event = CongressTradeEvent(
+            source="house_stock_watcher",
             event_id="test",
             ticker="HAL",
             transaction_type="BUY",
@@ -125,6 +131,7 @@ class TestScoring(unittest.TestCase):
     def test_scoring_reasons(self):
         """Test that scoring reasons are populated."""
         event = CongressTradeEvent(
+            source="house_stock_watcher",
             event_id="test",
             ticker="HAL",
             transaction_type="BUY",
