@@ -70,6 +70,10 @@ class Database:
                     amount_mid REAL,
                     currency TEXT,
                     raw TEXT,
+                    verified BOOLEAN DEFAULT 0,
+                    verification_sources TEXT,
+                    verification_status TEXT DEFAULT 'unverified',
+                    verification_discrepancies TEXT,
                     created_at TEXT NOT NULL,
                     UNIQUE(event_id)
                 )
@@ -250,8 +254,9 @@ class Database:
                     ticker, asset_type, transaction_type,
                     trade_date, disclosure_date, delay_days,
                     amount_low, amount_high, amount_mid, currency,
-                    raw, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    raw, verified, verification_sources, verification_status,
+                    verification_discrepancies, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event.event_id,
@@ -274,6 +279,15 @@ class Database:
                     event.amount_mid,
                     event.currency,
                     json.dumps(event.raw),
+                    getattr(event, "verified", False),
+                    json.dumps(getattr(event, "verification_sources", [])),
+                    getattr(event, "verification_status", "unverified"),
+                    (
+                        json.dumps(event.verification_discrepancies)
+                        if hasattr(event, "verification_discrepancies")
+                        and event.verification_discrepancies
+                        else None
+                    ),
                     event.created_at.isoformat(),
                 ),
             )

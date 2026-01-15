@@ -17,7 +17,10 @@ class CongressTradeEvent(BaseModel):
     """
 
     event_id: str = Field(..., description="Stable hash for deduplication")
-    source: Literal["finnhub"] = Field(default="finnhub", description="Data source")
+    source: str = Field(
+        ...,
+        description="Data source (house_stock_watcher, financial_modeling_prep, finnhub)"
+    )
 
     # Member information
     member_name: str | None = Field(None, description="Congress member name")
@@ -46,6 +49,22 @@ class CongressTradeEvent(BaseModel):
 
     # Raw data
     raw: dict = Field(default_factory=dict, description="Full raw API response")
+
+    # Verification (multi-source cross-verification)
+    verified: bool = Field(
+        default=False, description="Whether trade was verified from multiple sources"
+    )
+    verification_sources: list[str] = Field(
+        default_factory=list,
+        description="List of source names that reported this trade"
+    )
+    verification_status: str = Field(
+        default="unverified",
+        description="Verification status: verified, unverified, single_source"
+    )
+    verification_discrepancies: dict | None = Field(
+        None, description="Any discrepancies found during cross-verification"
+    )
 
     # Metadata
     created_at: datetime = Field(

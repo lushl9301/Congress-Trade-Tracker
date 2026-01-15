@@ -11,9 +11,21 @@ from typing import Literal
 class Config:
     """Application configuration loaded from environment variables."""
 
-    # Finnhub API
+    # Data Sources
+    # Finnhub API (DEPRECATED - requires paid tier for congressional data)
     FINNHUB_API_KEY: str = os.getenv("FINNHUB_API_KEY", "")
     FINNHUB_BASE_URL: str = "https://finnhub.io/api/v1"
+
+    # House Stock Watcher (Free, no API key required)
+    HSW_ENABLED: bool = os.getenv("HSW_ENABLED", "true").lower() == "true"
+
+    # Financial Modeling Prep (Free tier: 250 requests/day)
+    # TODO: Get API key from https://financialmodelingprep.com/register
+    FMP_API_KEY: str = os.getenv("FMP_API_KEY", "DUMMY_FMP_API_KEY_REPLACE_ME")
+    FMP_ENABLED: bool = os.getenv("FMP_ENABLED", "false").lower() == "true"
+
+    # Multi-source strategy: primary_only, fallback, all, verify
+    DATA_SOURCE_STRATEGY: str = os.getenv("DATA_SOURCE_STRATEGY", "verify")
 
     # Database
     DB_PATH: Path = Path(os.getenv("DB_PATH", "./data/app.db"))
@@ -68,8 +80,31 @@ class Config:
         """Validate configuration and return list of errors."""
         errors = []
 
-        if not cls.FINNHUB_API_KEY:
-            errors.append("FINNHUB_API_KEY is required")
+        # Data source validation
+        if not cls.HSW_ENABLED and not cls.FMP_ENABLED:
+            errors.append(
+                "At least one data source must be enabled (HSW_ENABLED or FMP_ENABLED)"
+            )
+
+        if cls.FMP_ENABLED and cls.FMP_API_KEY == "DUMMY_FMP_API_KEY_REPLACE_ME":
+            errors.append(
+                "FMP_ENABLED=true but using dummy API key. "
+                "Get real API key from https://financialmodelingprep.com/register "
+                "and set FMP_API_KEY environment variable"
+            )
+
+        if cls.DATA_SOURCE_STRATEGY not in ["primary_only", "fallback", "all", "verify"]:
+            errors.append(
+                f"DATA_SOURCE_STRATEGY must be one of: primary_only, fallback, all, verify. "
+                f"Got: '{cls.DATA_SOURCE_STRATEGY}'"
+            )
+
+        # Finnhub is deprecated for congressional data (requires paid tier)
+        if cls.FINNHUB_API_KEY:
+            errors.append(
+                "WARNING: Finnhub API key detected but congressional trading data "
+                "requires PAID tier (~$50/month). Consider using HSW or FMP instead."
+            )
 
         if cls.TRADING_MODE not in ["paper", "live"]:
             errors.append(
@@ -100,6 +135,12 @@ class Config:
         """Get configuration summary (without secrets)."""
         return {
             "db_path": str(cls.DB_PATH),
+            "data_sources": {
+                "hsw_enabled": cls.HSW_ENABLED,
+                "fmp_enabled": cls.FMP_ENABLED,
+                "fmp_configured": cls.FMP_API_KEY != "DUMMY_FMP_API_KEY_REPLACE_ME",
+                "strategy": cls.DATA_SOURCE_STRATEGY,
+            },
             "trading_mode": cls.TRADING_MODE,
             "trading_enabled": cls.TRADING_ENABLED,
             "strategy_version": cls.STRATEGY_VERSION,
