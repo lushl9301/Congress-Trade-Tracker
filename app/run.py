@@ -1,11 +1,12 @@
 """
 CLI runner for Congress Trade Tracker.
-Main entry point for all commands.
+Main entry point for all commands (using Typer for better UX).
 """
-import argparse
 import sys
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
+
+import typer
 
 from app.config import config
 from app.db import db
@@ -19,99 +20,115 @@ from app.strategy import run_signal_generation
 
 logger = get_logger(__name__)
 
+# Create Typer app
+app = typer.Typer(
+    name="congress-tracker",
+    help="Congress Trade Tracker - Automated trading based on congressional disclosures",
+    add_completion=False,
+)
 
-def cmd_init_db(args: argparse.Namespace) -> int:
+
+@app.command("init-db")
+def cmd_init_db() -> None:
     """Initialize database schema."""
     logger.info("Initializing database")
     try:
         db.init_schema()
-        print(f"Database initialized successfully at {db.db_path}")
-        return 0
+        typer.echo(f"✓ Database initialized successfully at {db.db_path}")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
-        print(f"Error: {e}")
-        return 1
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
-def cmd_ingest(args: argparse.Namespace) -> int:
-    """Run ingestion pipeline."""
+@app.command()
+def ingest(
+    symbol: Optional[str] = typer.Option(None, help="Filter by ticker symbol"),
+    from_date: Optional[str] = typer.Option(None, help="Start date (YYYY-MM-DD)"),
+    to_date: Optional[str] = typer.Option(None, help="End date (YYYY-MM-DD)"),
+) -> None:
+    """Fetch and ingest congressional trades from Finnhub."""
     logger.info("Running ingestion")
 
     try:
         result = run_ingestion(
-            symbol=args.symbol,
-            from_date=args.from_date,
-            to_date=args.to_date,
+            symbol=symbol,
+            from_date=from_date,
+            to_date=to_date,
         )
 
-        print("\n=== Ingestion Summary ===")
-        print(f"Status: {result['status']}")
-        print(f"Fetched: {result.get('fetched', 0)} records")
-        print(f"New events: {result.get('new_events', 0)}")
-        print(f"Duplicates: {result.get('duplicates', 0)}")
+        typer.echo("\n=== Ingestion Summary ===")
+        typer.echo(f"Status: {result['status']}")
+        typer.echo(f"Fetched: {result.get('fetched', 0)} records")
+        typer.echo(f"New events: {result.get('new_events', 0)}")
+        typer.echo(f"Duplicates: {result.get('duplicates', 0)}")
 
         if result.get('errors', 0) > 0:
-            print(f"Errors: {result['errors']}")
+            typer.echo(f"Errors: {result['errors']}")
 
-        return 0 if result["status"] == "success" else 1
+        if result["status"] != "success":
+            raise typer.Exit(code=1)
 
     except Exception as e:
         logger.error(f"Ingestion failed: {e}", exc_info=True)
-        print(f"Error: {e}")
-        return 1
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
-def cmd_signals(args: argparse.Namespace) -> int:
-    """Generate trading signals."""
+@app.command()
+def signals() -> None:
+    """Generate trading signals from events."""
     logger.info("Generating signals")
 
     try:
         result = run_signal_generation()
 
-        print("\n=== Signal Generation Summary ===")
-        print(f"Status: {result['status']}")
-        print(f"Processed: {result.get('processed', 0)} events")
-        print("\nSignals by strength:")
+        typer.echo("\n=== Signal Generation Summary ===")
+        typer.echo(f"Status: {result['status']}")
+        typer.echo(f"Processed: {result.get('processed', 0)} events")
+        typer.echo("\nSignals by strength:")
         for strength, count in result.get('signals_by_strength', {}).items():
-            print(f"  {strength}: {count}")
+            typer.echo(f"  {strength}: {count}")
 
-        return 0 if result["status"] == "success" else 1
+        if result["status"] != "success":
+            raise typer.Exit(code=1)
 
     except Exception as e:
         logger.error(f"Signal generation failed: {e}", exc_info=True)
-        print(f"Error: {e}")
-        return 1
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
-def cmd_trade(args: argparse.Namespace) -> int:
-    """Execute trading signals."""
+@app.command()
+def trade() -> None:
+    """Execute trading signals (respects TRADING_ENABLED flag)."""
     logger.info("Running trade execution")
 
     if not config.TRADING_ENABLED:
-        print("\n⚠️  WARNING: TRADING_ENABLED=false")
-        print("Orders will be logged but NOT submitted to IBKR\n")
+        typer.echo("\n⚠️  WARNING: TRADING_ENABLED=false")
+        typer.echo("Orders will be logged but NOT submitted to IBKR\n")
 
     try:
         # Get unexecuted signals
         signals = db.get_unexecuted_signals()
 
         if not signals:
-            print("No signals to execute")
-            return 0
+            typer.echo("No signals to execute")
+            return
 
-        print(f"\n=== Found {len(signals)} signals to execute ===\n")
+        typer.echo(f"\n=== Found {len(signals)} signals to execute ===\n")
 
         # Get NAV for position sizing
         client = get_ibkr_client()
         if config.TRADING_ENABLED:
             if not client.connect():
-                print("Error: Cannot connect to IBKR")
-                return 1
+                typer.echo("Error: Cannot connect to IBKR", err=True)
+                raise typer.Exit(code=1)
             nav = client.get_account_value("NetLiquidation")
         else:
             nav = 100000.0  # Mock NAV for dry run
 
-        print(f"Portfolio NAV: ${nav:,.2f}\n")
+        typer.echo(f"Portfolio NAV: ${nav:,.2f}\n")
 
         orders_placed = 0
         orders_skipped = 0
@@ -136,7 +153,7 @@ def cmd_trade(args: argparse.Namespace) -> int:
                 )
 
                 if qty == 0:
-                    print(f"SKIP {signal.ticker}: {', '.join(reasons)}")
+                    typer.echo(f"SKIP {signal.ticker}: {', '.join(reasons)}")
                     orders_skipped += 1
                     continue
 
@@ -145,17 +162,17 @@ def cmd_trade(args: argparse.Namespace) -> int:
                 allowed, reason = portfolio_manager.check_daily_exposure_limit(nav, notional)
 
                 if not allowed:
-                    print(f"SKIP {signal.ticker}: {reason}")
+                    typer.echo(f"SKIP {signal.ticker}: {reason}")
                     orders_skipped += 1
                     continue
 
                 # Place order
-                print(
+                typer.echo(
                     f"PLACE {signal.action} {qty} {signal.ticker} @ ${current_price:.2f} "
                     f"(notional: ${notional:,.2f})"
                 )
-                print(f"  Signal: {signal.strength} (score={signal.score})")
-                print(f"  Reasons: {', '.join(signal.reason)}")
+                typer.echo(f"  Signal: {signal.strength} (score={signal.score})")
+                typer.echo(f"  Reasons: {', '.join(signal.reason)}")
 
                 order = order_manager.place_order(
                     ticker=signal.ticker,
@@ -167,15 +184,15 @@ def cmd_trade(args: argparse.Namespace) -> int:
 
                 if order:
                     orders_placed += 1
-                    print(f"  ✓ Order placed: {order.order_id}")
+                    typer.echo(f"  ✓ Order placed: {order.order_id}")
 
                     # Poll status if trading enabled
                     if config.TRADING_ENABLED and order.status != "MOCK_DISABLED":
                         status = order_manager.poll_order_status(order.order_id, timeout=30)
-                        print(f"  Status: {status}\n")
+                        typer.echo(f"  Status: {status}\n")
                 else:
                     orders_skipped += 1
-                    print(f"  ✗ Order failed\n")
+                    typer.echo(f"  ✗ Order failed\n")
 
             except Exception as e:
                 logger.error(f"Error processing signal {signal.signal_id}: {e}")
@@ -187,105 +204,103 @@ def cmd_trade(args: argparse.Namespace) -> int:
             client.disconnect()
 
         # Print summary
-        print("\n=== Trade Execution Summary ===")
-        print(f"Orders placed: {orders_placed}")
-        print(f"Orders skipped: {orders_skipped}")
-        print(f"Errors: {len(errors)}")
+        typer.echo("\n=== Trade Execution Summary ===")
+        typer.echo(f"Orders placed: {orders_placed}")
+        typer.echo(f"Orders skipped: {orders_skipped}")
+        typer.echo(f"Errors: {len(errors)}")
 
         if errors:
-            print("\nErrors:")
+            typer.echo("\nErrors:")
             for err in errors:
-                print(f"  - {err}")
-
-        return 0
+                typer.echo(f"  - {err}")
 
     except Exception as e:
         logger.error(f"Trade execution failed: {e}", exc_info=True)
-        print(f"Error: {e}")
-        return 1
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
-def cmd_reconcile(args: argparse.Namespace) -> int:
+@app.command()
+def reconcile() -> None:
     """Reconcile IBKR state with local database."""
     logger.info("Running reconciliation")
 
     try:
         result = run_reconciliation()
 
-        print("\n=== Reconciliation Summary ===")
-        print(f"Status: {result['status']}")
+        typer.echo("\n=== Reconciliation Summary ===")
+        typer.echo(f"Status: {result['status']}")
 
         # Positions
         pos_result = result.get('positions', {})
-        print(f"\nPositions:")
-        print(f"  IBKR: {pos_result.get('ibkr_positions', 0)}")
-        print(f"  Local: {pos_result.get('local_positions', 0)}")
-        print(f"  Discrepancies: {pos_result.get('discrepancies', 0)}")
+        typer.echo(f"\nPositions:")
+        typer.echo(f"  IBKR: {pos_result.get('ibkr_positions', 0)}")
+        typer.echo(f"  Local: {pos_result.get('local_positions', 0)}")
+        typer.echo(f"  Discrepancies: {pos_result.get('discrepancies', 0)}")
 
         if pos_result.get('discrepancies', 0) > 0:
-            print("\n  Details:")
+            typer.echo("\n  Details:")
             for disc in pos_result.get('details', []):
-                print(f"    {disc}")
+                typer.echo(f"    {disc}")
 
         # Orders
         ord_result = result.get('orders', {})
-        print(f"\nOpen Orders:")
-        print(f"  IBKR: {ord_result.get('ibkr_open_orders', 0)}")
+        typer.echo(f"\nOpen Orders:")
+        typer.echo(f"  IBKR: {ord_result.get('ibkr_open_orders', 0)}")
 
         # Account
         acc_result = result.get('account', {})
         if acc_result.get('status') == 'success':
-            print(f"\nAccount:")
-            print(f"  Net Liquidation: ${acc_result.get('net_liquidation', 0):,.2f}")
-            print(f"  Cash: ${acc_result.get('total_cash', 0):,.2f}")
-            print(f"  Buying Power: ${acc_result.get('buying_power', 0):,.2f}")
-            print(f"  Mode: {acc_result.get('mode', 'unknown').upper()}")
-
-        return 0
+            typer.echo(f"\nAccount:")
+            typer.echo(f"  Net Liquidation: ${acc_result.get('net_liquidation', 0):,.2f}")
+            typer.echo(f"  Cash: ${acc_result.get('total_cash', 0):,.2f}")
+            typer.echo(f"  Buying Power: ${acc_result.get('buying_power', 0):,.2f}")
+            typer.echo(f"  Mode: {acc_result.get('mode', 'unknown').upper()}")
 
     except Exception as e:
         logger.error(f"Reconciliation failed: {e}", exc_info=True)
-        print(f"Error: {e}")
-        return 1
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
-def cmd_daily(args: argparse.Namespace) -> int:
-    """Run daily pipeline: ingest -> signals -> trade."""
+@app.command()
+def daily() -> None:
+    """Run daily pipeline: ingest → signals → trade (if enabled)."""
     logger.info("Running daily pipeline")
 
-    print(f"\n{'='*60}")
-    print(f"Congress Trade Tracker - Daily Pipeline")
-    print(f"Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
-    print(f"Mode: {config.TRADING_MODE.upper()}")
-    print(f"Trading Enabled: {config.TRADING_ENABLED}")
-    print(f"{'='*60}\n")
+    typer.echo(f"\n{'='*60}")
+    typer.echo(f"Congress Trade Tracker - Daily Pipeline")
+    typer.echo(f"Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    typer.echo(f"Mode: {config.TRADING_MODE.upper()}")
+    typer.echo(f"Trading Enabled: {config.TRADING_ENABLED}")
+    typer.echo(f"{'='*60}\n")
 
     summary: dict[str, Any] = {
         "date": datetime.utcnow().strftime('%Y-%m-%d'),
     }
 
     # Step 1: Ingest
-    print("\n[1/3] Running ingestion...")
+    typer.echo("\n[1/3] Running ingestion...")
     ingest_result = run_ingestion()
     summary['ingestion'] = ingest_result
-    print(f"  New events: {ingest_result.get('new_events', 0)}")
-    print(f"  Duplicates: {ingest_result.get('duplicates', 0)}")
+    typer.echo(f"  New events: {ingest_result.get('new_events', 0)}")
+    typer.echo(f"  Duplicates: {ingest_result.get('duplicates', 0)}")
 
     # Step 2: Generate signals
-    print("\n[2/3] Generating signals...")
+    typer.echo("\n[2/3] Generating signals...")
     signals_result = run_signal_generation()
     summary['signals'] = signals_result.get('signals_by_strength', {})
-    print(f"  STRONG: {signals_result.get('signals_by_strength', {}).get('STRONG', 0)}")
-    print(f"  NORMAL: {signals_result.get('signals_by_strength', {}).get('NORMAL', 0)}")
+    typer.echo(f"  STRONG: {signals_result.get('signals_by_strength', {}).get('STRONG', 0)}")
+    typer.echo(f"  NORMAL: {signals_result.get('signals_by_strength', {}).get('NORMAL', 0)}")
 
     # Step 3: Execute trades (only if enabled)
-    print("\n[3/3] Executing trades...")
+    typer.echo("\n[3/3] Executing trades...")
     if config.TRADING_ENABLED:
         # Would call trade execution here
-        print("  (Trade execution via 'trade' command)")
+        typer.echo("  (Trade execution via 'trade' command)")
         summary['trading'] = {"note": "Run 'trade' command separately"}
     else:
-        print("  Skipped (TRADING_ENABLED=false)")
+        typer.echo("  Skipped (TRADING_ENABLED=false)")
         summary['trading'] = {"note": "Trading disabled"}
 
     # Portfolio summary
@@ -295,28 +310,27 @@ def cmd_daily(args: argparse.Namespace) -> int:
         "total_notional": sum(p.qty * p.avg_cost for p in positions),
     }
 
-    print("\n" + "="*60)
-    print("Daily pipeline complete")
-    print(f"Positions: {len(positions)}")
-    print("="*60 + "\n")
-
-    return 0
+    typer.echo("\n" + "="*60)
+    typer.echo("Daily pipeline complete")
+    typer.echo(f"Positions: {len(positions)}")
+    typer.echo("="*60 + "\n")
 
 
-def cmd_status(args: argparse.Namespace) -> int:
+@app.command()
+def status() -> None:
     """Show system status and portfolio summary."""
-    print("\n=== Congress Trade Tracker Status ===\n")
+    typer.echo("\n=== Congress Trade Tracker Status ===\n")
 
     # Config
-    print("Configuration:")
-    print(f"  Database: {config.DB_PATH}")
-    print(f"  Trading Mode: {config.TRADING_MODE.upper()}")
-    print(f"  Trading Enabled: {config.TRADING_ENABLED}")
-    print(f"  Strategy Version: {config.STRATEGY_VERSION}")
-    print(f"  Email Enabled: {config.EMAIL_ENABLED}")
+    typer.echo("Configuration:")
+    typer.echo(f"  Database: {config.DB_PATH}")
+    typer.echo(f"  Trading Mode: {config.TRADING_MODE.upper()}")
+    typer.echo(f"  Trading Enabled: {config.TRADING_ENABLED}")
+    typer.echo(f"  Strategy Version: {config.STRATEGY_VERSION}")
+    typer.echo(f"  Email Enabled: {config.EMAIL_ENABLED}")
 
     # Database stats
-    print("\nDatabase:")
+    typer.echo("\nDatabase:")
     with db.get_connection() as conn:
         cursor = conn.cursor()
 
@@ -329,77 +343,38 @@ def cmd_status(args: argparse.Namespace) -> int:
         cursor.execute("SELECT COUNT(*) FROM orders")
         orders_count = cursor.fetchone()[0]
 
-        print(f"  Events: {events_count}")
-        print(f"  Signals: {signals_count}")
-        print(f"  Orders: {orders_count}")
+        typer.echo(f"  Events: {events_count}")
+        typer.echo(f"  Signals: {signals_count}")
+        typer.echo(f"  Orders: {orders_count}")
 
     # Portfolio
-    print("\nPortfolio:")
+    typer.echo("\nPortfolio:")
     positions = db.get_all_positions()
-    print(f"  Positions: {len(positions)}")
+    typer.echo(f"  Positions: {len(positions)}")
 
     if positions:
         total_notional = sum(p.qty * p.avg_cost for p in positions)
-        print(f"  Total Value: ${total_notional:,.2f}")
-        print("\n  Holdings:")
+        typer.echo(f"  Total Value: ${total_notional:,.2f}")
+        typer.echo("\n  Holdings:")
         for pos in positions:
-            print(
+            typer.echo(
                 f"    {pos.ticker}: {pos.qty} @ ${pos.avg_cost:.2f} "
                 f"(holding {pos.holding_days} days)"
             )
 
-    return 0
 
+@app.callback()
+def main(
+    log_level: str = typer.Option("INFO", help="Logging level"),
+    json_logs: bool = typer.Option(False, "--json-logs", help="Output logs in JSON format"),
+) -> None:
+    """
+    Congress Trade Tracker - Automated trading based on congressional disclosures.
 
-def main() -> int:
-    """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        description="Congress Trade Tracker - Automated trading based on congressional disclosures"
-    )
-
-    parser.add_argument(
-        "--log-level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Logging level",
-    )
-
-    parser.add_argument(
-        "--json-logs",
-        action="store_true",
-        help="Output logs in JSON format",
-    )
-
-    subparsers = parser.add_subparsers(dest="command", help="Command to run")
-
-    # init-db command
-    subparsers.add_parser("init-db", help="Initialize database schema")
-
-    # ingest command
-    ingest_parser = subparsers.add_parser("ingest", help="Fetch and ingest congressional trades")
-    ingest_parser.add_argument("--symbol", help="Filter by ticker symbol")
-    ingest_parser.add_argument("--from-date", help="Start date (YYYY-MM-DD)")
-    ingest_parser.add_argument("--to-date", help="End date (YYYY-MM-DD)")
-
-    # signals command
-    subparsers.add_parser("signals", help="Generate trading signals")
-
-    # trade command
-    subparsers.add_parser("trade", help="Execute trading signals")
-
-    # reconcile command
-    subparsers.add_parser("reconcile", help="Reconcile IBKR state with database")
-
-    # daily command
-    subparsers.add_parser("daily", help="Run daily pipeline (ingest + signals)")
-
-    # status command
-    subparsers.add_parser("status", help="Show system status")
-
-    args = parser.parse_args()
-
+    Set up logging and validate configuration before running commands.
+    """
     # Setup logging
-    setup_logging(level=args.log_level, json_format=args.json_logs)
+    setup_logging(level=log_level, json_format=json_logs)
 
     # Validate config
     errors = config.validate()
@@ -412,30 +387,13 @@ def main() -> int:
 
         # Don't fail on warnings
         if any(not e.startswith("WARNING") for e in errors):
-            return 1
+            raise typer.Exit(code=1)
 
-    # Route to command
-    if not args.command:
-        parser.print_help()
-        return 1
 
-    commands = {
-        "init-db": cmd_init_db,
-        "ingest": cmd_ingest,
-        "signals": cmd_signals,
-        "trade": cmd_trade,
-        "reconcile": cmd_reconcile,
-        "daily": cmd_daily,
-        "status": cmd_status,
-    }
-
-    cmd_func = commands.get(args.command)
-    if not cmd_func:
-        print(f"Unknown command: {args.command}")
-        return 1
-
-    return cmd_func(args)
+def cli_main() -> None:
+    """Entry point for console script."""
+    app()
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    app()

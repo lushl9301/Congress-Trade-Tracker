@@ -1,118 +1,79 @@
 """
-Structured logging configuration for Congress Trade Tracker.
-Provides JSON-formatted logs for production observability.
+Logging configuration for Congress Trade Tracker using Loguru.
+Provides structured logging with better defaults and automatic exception handling.
 """
-import logging
 import sys
-from datetime import datetime
 from typing import Any
 
-
-class JSONFormatter(logging.Formatter):
-    """Format log records as JSON for easy parsing and analysis."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        """Format a log record as JSON string."""
-        import json
-
-        log_data = {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-            "level": record.levelname,
-            "logger": record.name,
-            "message": record.getMessage(),
-            "module": record.module,
-            "function": record.funcName,
-            "line": record.lineno,
-        }
-
-        # Add exception info if present
-        if record.exc_info:
-            log_data["exception"] = self.formatException(record.exc_info)
-
-        # Add extra fields from record
-        for key, value in record.__dict__.items():
-            if key not in [
-                "name",
-                "msg",
-                "args",
-                "created",
-                "filename",
-                "funcName",
-                "levelname",
-                "levelno",
-                "lineno",
-                "module",
-                "msecs",
-                "message",
-                "pathname",
-                "process",
-                "processName",
-                "relativeCreated",
-                "thread",
-                "threadName",
-                "exc_info",
-                "exc_text",
-                "stack_info",
-            ]:
-                log_data[key] = value
-
-        return json.dumps(log_data)
+from loguru import logger
 
 
 def setup_logging(level: str = "INFO", json_format: bool = False) -> None:
     """
-    Configure application logging.
+    Configure application logging using Loguru.
 
     Args:
         level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         json_format: If True, use JSON formatter; otherwise use human-readable format
     """
-    log_level = getattr(logging, level.upper(), logging.INFO)
+    # Remove default handler
+    logger.remove()
 
-    # Create root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
-
-    # Remove existing handlers
-    root_logger.handlers.clear()
-
-    # Create console handler
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(log_level)
-
-    # Set formatter
+    # Configure format based on preference
     if json_format:
-        formatter = JSONFormatter()
+        # JSON format for production/parsing
+        logger.add(
+            sys.stdout,
+            level=level.upper(),
+            format="{message}",
+            serialize=True,  # This makes Loguru output JSON
+            backtrace=True,
+            diagnose=True,
+        )
     else:
-        formatter = logging.Formatter(
-            fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+        # Human-readable format for development
+        logger.add(
+            sys.stdout,
+            level=level.upper(),
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level:8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> | <level>{message}</level>",
+            colorize=True,
+            backtrace=True,
+            diagnose=True,
         )
 
-    handler.setFormatter(formatter)
-    root_logger.addHandler(handler)
-
-    # Reduce noise from third-party libraries
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("requests").setLevel(logging.WARNING)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
+    # Reduce noise from third-party libraries by filtering
+    logger.disable("urllib3")
+    logger.disable("requests")
+    logger.disable("httpx")
+    logger.disable("ib_insync")
 
 
-def get_logger(name: str) -> logging.Logger:
-    """Get a logger instance for a module."""
-    return logging.getLogger(name)
+def get_logger(name: str):
+    """
+    Get a logger instance for a module.
+
+    Note: Loguru uses a single global logger, so this returns the same logger
+    with the module name bound to it for context.
+    """
+    return logger.bind(name=name)
 
 
-# Convenience function for adding structured context to logs
-def log_with_context(logger: logging.Logger, level: str, message: str, **context: Any) -> None:
+# Convenience function for adding structured context to logs (for backward compatibility)
+def log_with_context(log: Any, level: str, message: str, **context: Any) -> None:
     """
     Log a message with additional context fields.
 
     Args:
-        logger: Logger instance
+        log: Logger instance (Loguru logger)
         level: Log level (debug, info, warning, error, critical)
         message: Log message
         **context: Additional key-value pairs to include in log
     """
-    log_func = getattr(logger, level.lower())
-    log_func(message, extra=context)
+    # Bind context to logger and log at the specified level
+    bound_logger = log.bind(**context)
+    log_func = getattr(bound_logger, level.lower())
+    log_func(message)
+
+
+# Re-export logger for convenience
+__all__ = ["logger", "setup_logging", "get_logger", "log_with_context"]

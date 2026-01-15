@@ -1,18 +1,32 @@
 # Core dependencies
-pydantic>=2.0.0
-requests>=2.31.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+requests==2.31.0
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
 
 # IBKR integration
-ib-insync>=0.9.86
+ib-insync==0.9.86
+
+# CLI and logging (modern tooling)
+click==8.1.7  # Pin for compatibility with Typer 0.9.0
+typer==0.9.0
+loguru==0.7.2
+
+# Email notifications (optional - may require setuptools workaround)
+# sendgrid==6.11.0  # Comment out if installation fails, email notifications will be disabled
 
 # Optional: async HTTP client (alternative to requests)
 # httpx>=0.25.0
 
 # Testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
+pytest==7.4.4
+pytest-cov==4.1.0
 
 # Development tools
-black>=23.0.0
-flake8>=6.1.0
-mypy>=1.5.0
+black==23.0.0
+flake8==6.1.0
+mypy==1.5.0

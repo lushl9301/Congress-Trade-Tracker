@@ -4,6 +4,8 @@ Automated trading system that tracks US Congressional stock disclosures via Finn
 
 **MVP Status**: Production-lean implementation with PAPER trading by default.
 
+**Enhanced Edition**: Now with modern Python tooling (Typer, Loguru, Alembic) for better developer experience and maintainability.
+
 ## Features
 
 - **Data Ingestion**: Fetches congressional trading data from Finnhub API (free tier)
@@ -13,6 +15,13 @@ Automated trading system that tracks US Congressional stock disclosures via Finn
 - **IBKR Integration**: Executes trades via Interactive Brokers (ib_insync)
 - **Audit Trail**: Complete logging of all decisions, orders, and fills
 - **Safety First**: Paper trading by default with multiple kill switches
+
+## Modern Tooling
+
+- **Typer CLI**: Beautiful, auto-documented command-line interface with better error messages and help text
+- **Loguru Logging**: Simplified logging with automatic exception tracing, colorized output, and JSON serialization
+- **Alembic Migrations**: Database schema versioning for safe schema evolution without data loss
+- **Pinned Dependencies**: Reproducible builds with exact version specifications
 
 ## Quick Start
 
@@ -96,7 +105,7 @@ python -m app.run reconcile
 ```
 app/
 ├── config.py          # Configuration from environment
-├── logging.py         # Structured logging
+├── logging.py         # Loguru-based structured logging
 ├── models.py          # Pydantic data models
 ├── db.py              # SQLite database operations
 ├── finnhub_client.py  # Finnhub API client
@@ -108,8 +117,13 @@ app/
 │   ├── orders.py      # Order placement
 │   └── reconcile.py   # State reconciliation
 ├── notify/            # Notifications
-│   └── email.py       # Email alerts
-└── run.py             # CLI entry point
+│   └── email.py       # Email alerts (SendGrid)
+└── run.py             # Typer-based CLI entry point
+
+alembic/               # Database migrations
+├── versions/          # Migration scripts
+├── env.py            # Migration environment
+└── script.py.mako    # Migration template
 ```
 
 ## Strategy (MVP)
@@ -190,20 +204,56 @@ pytest tests/test_dedup.py
 pytest --cov=app tests/
 ```
 
+## Database Migrations
+
+This project uses **Alembic** for database schema migrations, allowing you to evolve the schema over time without data loss.
+
+### Basic Migration Commands
+
+```bash
+# Show current database version
+alembic current
+
+# View migration history
+alembic history
+
+# Upgrade to latest version
+alembic upgrade head
+
+# Downgrade one revision
+alembic downgrade -1
+
+# Create a new migration
+alembic revision -m "description of changes"
+```
+
+### Note for MVP
+
+The MVP currently uses `python -m app.run init-db` to bootstrap the database schema. Alembic is configured for future schema changes. See `alembic/README` for more details.
+
 ## Monitoring & Observability
 
-All operations log structured events including:
+All operations log structured events using **Loguru** with:
+- **Colorized output** for better readability in development
+- **Automatic exception tracing** with full context
+- **Structured logging** with contextual information
 - Event ingestion counts (new/duplicate)
 - Signal generation (by strength)
 - Order placement attempts
 - Position updates
-- Errors with context
+- Errors with full stack traces
 
-Use `--json-logs` flag for JSON-formatted logs:
+Use `--json-logs` flag for JSON-formatted logs (useful for log aggregation):
 
 ```bash
 python -m app.run --json-logs daily
 ```
+
+The enhanced logging includes:
+- Automatic timestamps and log levels
+- Module and function names
+- Line numbers for debugging
+- Exception backtraces with local variables (in development mode)
 
 ## Production Deployment
 

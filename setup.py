@@ -27,22 +27,32 @@ setup(
     ],
     python_requires=">=3.11",
     install_requires=[
-        "pydantic>=2.0.0",
-        "requests>=2.31.0",
-        "ib-insync>=0.9.86",
+        "pydantic==2.5.3",
+        "pydantic-settings==2.1.0",
+        "requests==2.31.0",
+        "python-dotenv==1.0.0",
+        "sqlalchemy==2.0.25",
+        "alembic==1.13.1",
+        "ib-insync==0.9.86",
+        "click==8.1.7",
+        "typer==0.9.0",
+        "loguru==0.7.2",
     ],
     extras_require={
         "dev": [
-            "pytest>=7.4.0",
-            "pytest-cov>=4.1.0",
-            "black>=23.0.0",
-            "flake8>=6.1.0",
-            "mypy>=1.5.0",
+            "pytest==7.4.4",
+            "pytest-cov==4.1.0",
+            "black==23.0.0",
+            "flake8==6.1.0",
+            "mypy==1.5.0",
+        ],
+        "email": [
+            "sendgrid==6.11.0",
         ],
     },
     entry_points={
         "console_scripts": [
-            "congress-tracker=app.run:main",
+            "congress-tracker=app.run:cli_main",
         ],
     },
 )
