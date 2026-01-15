@@ -8,6 +8,7 @@ from typing import Any
 
 from app.config import config
 from app.data_sources import (
+    CapitolTradesSource,
     DataSourceManager,
     FinancialModelingPrepSource,
     HouseStockWatcherSource,
@@ -32,6 +33,12 @@ class CongressTradeIngester:
         """Initialize data source manager based on configuration."""
         sources = []
 
+        # Add CapitolTrades if enabled (primary source - both House + Senate)
+        if config.CT_ENABLED:
+            logger.info("Initializing CapitolTrades source (House + Senate)")
+            ct = CapitolTradesSource(use_cache=config.CT_USE_CACHE)
+            sources.append(ct)
+
         # Add House Stock Watcher if enabled
         if config.HSW_ENABLED:
             logger.info("Initializing House Stock Watcher source")
@@ -47,7 +54,7 @@ class CongressTradeIngester:
         if not sources:
             logger.error("No data sources enabled! Check configuration.")
             raise RuntimeError(
-                "No data sources enabled. Set HSW_ENABLED=true or FMP_ENABLED=true"
+                "No data sources enabled. Set CT_ENABLED=true, HSW_ENABLED=true or FMP_ENABLED=true"
             )
 
         # Parse strategy from config

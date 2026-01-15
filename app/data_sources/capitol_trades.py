@@ -102,7 +102,7 @@ class CapitolTradesSource(CongressDataSource):
             to_date: End date for trades (optional, applied after fetching)
 
         Returns:
-            List of raw trade records
+            List of raw trade records (only trades with valid tickers)
 
         Raises:
             RuntimeError: If Playwright is not installed
@@ -129,14 +129,23 @@ class CapitolTradesSource(CongressDataSource):
         logger.info("Scraping CapitolTrades.com (this may take 30-60 seconds)...")
         raw_trades = self._scrape_trades()
 
-        # Cache the results
-        if self.use_cache and raw_trades:
-            self._save_cache(raw_trades)
+        # Filter out trades without valid tickers
+        trades_with_tickers = [t for t in raw_trades if t.get("ticker")]
+        if len(raw_trades) > len(trades_with_tickers):
+            skipped = len(raw_trades) - len(trades_with_tickers)
+            logger.info(
+                f"Filtered out {skipped} trades without valid ticker symbols "
+                f"(mutual funds, bonds, etc.)"
+            )
 
-        logger.info(f"Fetched {len(raw_trades)} trades from CapitolTrades")
+        # Cache the results
+        if self.use_cache and trades_with_tickers:
+            self._save_cache(trades_with_tickers)
+
+        logger.info(f"Fetched {len(trades_with_tickers)} trades from CapitolTrades")
 
         # Apply filters
-        return self._filter_trades(raw_trades, symbol, from_date, to_date)
+        return self._filter_trades(trades_with_tickers, symbol, from_date, to_date)
 
     def _check_playwright(self) -> bool:
         """Check if Playwright is installed and available."""

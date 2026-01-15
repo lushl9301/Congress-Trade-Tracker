@@ -403,7 +403,7 @@ def main():
 
     # Test 3: Get specific profiles
     pelosi_data = test_get_profile("Nancy Pelosi")
-    mccarthy_data = test_get_profile("Kevin McCarthy")
+    mccarthy_data = test_get_profile("David Trone")
 
     # Test 4: Discover endpoints
     endpoint_results = explore_endpoints()
