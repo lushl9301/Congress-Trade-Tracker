@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "congress-trade-tracker"
+version = "0.1.0"
+description = "Automated investment assistant tracking congressional stock trades"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+    "sqlalchemy>=2.0.25",
+    "alembic>=1.13.1",
+    "finnhub-python>=2.4.19",
+    "requests>=2.31.0",
+    "pandas>=2.1.4",
+    "ib-insync>=0.9.86",
+    "typer[all]>=0.9.0",
+    "loguru>=0.7.2",
+    "schedule>=1.2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-cov>=4.1.0",
+    "black>=23.12.1",
+    "ruff>=0.1.9",
+]
+notifications = [
+    "sendgrid>=6.11.0",
+]
+
+[project.scripts]
+tracker = "tracker.cli:app"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
