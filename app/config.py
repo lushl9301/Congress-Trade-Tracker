@@ -29,6 +29,12 @@ class Config:
     FMP_API_KEY: str = os.getenv("FMP_API_KEY", "DUMMY_FMP_API_KEY_REPLACE_ME")
     FMP_ENABLED: bool = os.getenv("FMP_ENABLED", "false").lower() == "true"
 
+    # CapitolTrades (Free, requires web scraping)
+    # Aggregated data from capitoltrades.com
+    # Requires implementation: See CAPITOL_TRADES_IMPLEMENTATION.md
+    CT_ENABLED: bool = os.getenv("CT_ENABLED", "false").lower() == "true"
+    CT_USE_CACHE: bool = os.getenv("CT_USE_CACHE", "true").lower() == "true"
+
     # Multi-source strategy: primary_only, fallback, all, verify
     DATA_SOURCE_STRATEGY: str = os.getenv("DATA_SOURCE_STRATEGY", "verify")
 
@@ -86,9 +92,10 @@ class Config:
         errors = []
 
         # Data source validation
-        if not cls.HSW_ENABLED and not cls.FMP_ENABLED:
+        if not cls.HSW_ENABLED and not cls.FMP_ENABLED and not cls.CT_ENABLED:
             errors.append(
-                "At least one data source must be enabled (HSW_ENABLED or FMP_ENABLED)"
+                "At least one data source must be enabled "
+                "(HSW_ENABLED, FMP_ENABLED, or CT_ENABLED)"
             )
 
         if cls.FMP_ENABLED and cls.FMP_API_KEY == "DUMMY_FMP_API_KEY_REPLACE_ME":
@@ -96,6 +103,13 @@ class Config:
                 "FMP_ENABLED=true but using dummy API key. "
                 "Get real API key from https://financialmodelingprep.com/register "
                 "and set FMP_API_KEY environment variable"
+            )
+
+        if cls.CT_ENABLED:
+            errors.append(
+                "WARNING: CapitolTrades source enabled but requires full implementation. "
+                "See CAPITOL_TRADES_IMPLEMENTATION.md for details. "
+                "The source will not fetch data until scraping is implemented."
             )
 
         if cls.DATA_SOURCE_STRATEGY not in ["primary_only", "fallback", "all", "verify"]:
@@ -144,6 +158,8 @@ class Config:
                 "hsw_enabled": cls.HSW_ENABLED,
                 "fmp_enabled": cls.FMP_ENABLED,
                 "fmp_configured": cls.FMP_API_KEY != "DUMMY_FMP_API_KEY_REPLACE_ME",
+                "ct_enabled": cls.CT_ENABLED,
+                "ct_use_cache": cls.CT_USE_CACHE,
                 "strategy": cls.DATA_SOURCE_STRATEGY,
             },
             "trading_mode": cls.TRADING_MODE,
