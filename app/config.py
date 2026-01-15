@@ -7,6 +7,11 @@ import os
 from pathlib import Path
 from typing import Literal
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 class Config:
     """Application configuration loaded from environment variables."""
