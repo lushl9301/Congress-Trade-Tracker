@@ -2,6 +2,7 @@
 Portfolio management module for Congress Trade Tracker.
 Handles position sizing, risk controls, and exit rules.
 """
+
 from datetime import datetime
 from typing import Any
 
@@ -67,7 +68,9 @@ class PortfolioManager:
 
             # Check if we can add to position
             if existing_exposure_pct >= self.max_ticker_pct:
-                return 0, [f"Already at max ticker exposure: {existing_exposure_pct:.2%}"]
+                return 0, [
+                    f"Already at max ticker exposure: {existing_exposure_pct:.2%}"
+                ]
 
             # Only allow adding if signal is STRONG and last add was >7 days ago
             if signal_strength != "STRONG":
@@ -75,13 +78,17 @@ class PortfolioManager:
 
             days_since_open = (datetime.utcnow() - existing_position.opened_at).days
             if days_since_open < 7:
-                return 0, [f"Last position opened {days_since_open} days ago (min 7 days)"]
+                return 0, [
+                    f"Last position opened {days_since_open} days ago (min 7 days)"
+                ]
 
             # Reduce target to respect max exposure
             max_additional_notional = (nav * self.max_ticker_pct) - existing_notional
             target_notional = min(target_notional, max_additional_notional)
 
-            reasons.append(f"Adding to existing position (current: {existing_exposure_pct:.2%})")
+            reasons.append(
+                f"Adding to existing position (current: {existing_exposure_pct:.2%})"
+            )
 
         # Calculate shares
         shares = int(target_notional / current_price)
@@ -100,12 +107,15 @@ class PortfolioManager:
             return 0, [f"Would exceed max ticker exposure: {final_exposure_pct:.2%}"]
 
         reasons.append(
-            f"Sized for {signal_strength}: {shares} shares = ${final_notional:,.2f} ({target_pct:.2%} NAV)"
+            f"Sized for {signal_strength}: {shares} shares = "
+            f"${final_notional:,.2f} ({target_pct:.2%} NAV)"
         )
 
         return shares, reasons
 
-    def check_daily_exposure_limit(self, nav: float, proposed_notional: float) -> tuple[bool, str]:
+    def check_daily_exposure_limit(
+        self, nav: float, proposed_notional: float
+    ) -> tuple[bool, str]:
         """
         Check if proposed trade would exceed daily exposure limit.
 
@@ -121,7 +131,11 @@ class PortfolioManager:
         exposure_pct = proposed_notional / nav
 
         if exposure_pct > self.max_daily_exposure:
-            return False, f"Would exceed daily exposure limit: {exposure_pct:.2%} > {self.max_daily_exposure:.2%}"
+            return (
+                False,
+                f"Would exceed daily exposure limit: "
+                f"{exposure_pct:.2%} > {self.max_daily_exposure:.2%}",
+            )
 
         return True, ""
 
@@ -205,7 +219,9 @@ class PortfolioManager:
             position.qty = new_qty
             position.last_updated_at = datetime.utcnow()
             db.upsert_position(position)
-            logger.info(f"Reduced position {ticker}: -{qty} shares, remaining: {new_qty}")
+            logger.info(
+                f"Reduced position {ticker}: -{qty} shares, remaining: {new_qty}"
+            )
 
     def process_fill(self, fill: Fill) -> None:
         """
@@ -219,7 +235,9 @@ class PortfolioManager:
         elif fill.side == "SELL":
             self.close_position(fill.ticker, fill.qty)
 
-        logger.info(f"Processed fill: {fill.side} {fill.qty} {fill.ticker} @ {fill.price}")
+        logger.info(
+            f"Processed fill: {fill.side} {fill.qty} {fill.ticker} @ {fill.price}"
+        )
 
     def check_exit_conditions(
         self, position: Position, current_price: float
@@ -245,7 +263,9 @@ class PortfolioManager:
 
         return False, None
 
-    def get_portfolio_summary(self, prices: dict[str, float] | None = None) -> dict[str, Any]:
+    def get_portfolio_summary(
+        self, prices: dict[str, float] | None = None
+    ) -> dict[str, Any]:
         """
         Get portfolio summary with current positions and exposure.
 
@@ -268,7 +288,9 @@ class PortfolioManager:
         total_notional = 0.0
 
         for pos in positions:
-            current_price = prices.get(pos.ticker) if prices else pos.avg_cost
+            current_price = (
+                prices.get(pos.ticker, pos.avg_cost) if prices else pos.avg_cost
+            )
             notional = pos.qty * current_price
             pnl = (current_price - pos.avg_cost) * pos.qty
             pnl_pct = (current_price - pos.avg_cost) / pos.avg_cost

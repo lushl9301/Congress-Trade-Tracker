@@ -2,6 +2,7 @@
 Finnhub API client for fetching congressional trading data.
 Uses the free tier congressional trading endpoint.
 """
+
 from datetime import date, datetime
 from typing import Any
 
@@ -33,7 +34,10 @@ class FinnhubClient:
         self.session.headers.update({"X-Finnhub-Token": self.api_key})
 
     def get_congress_trading(
-        self, symbol: str | None = None, from_date: str | None = None, to_date: str | None = None
+        self,
+        symbol: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Fetch congressional trading data from Finnhub.

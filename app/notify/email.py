@@ -2,6 +2,7 @@
 Email notification module for Congress Trade Tracker.
 Sends alerts and summaries via SMTP.
 """
+
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -43,7 +44,13 @@ class EmailNotifier:
             return False
 
         if not all(
-            [self.smtp_host, self.smtp_user, self.smtp_password, self.email_from, self.email_to]
+            [
+                self.smtp_host,
+                self.smtp_user,
+                self.smtp_password,
+                self.email_from,
+                self.email_to,
+            ]
         ):
             logger.error("Email configuration incomplete")
             return False

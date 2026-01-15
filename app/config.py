@@ -2,6 +2,7 @@
 Configuration management for Congress Trade Tracker.
 All secrets must be read from environment variables.
 """
+
 import os
 from pathlib import Path
 from typing import Literal
@@ -19,7 +20,9 @@ class Config:
 
     # IBKR Settings
     IBKR_HOST: str = os.getenv("IBKR_HOST", "127.0.0.1")
-    IBKR_PORT: int = int(os.getenv("IBKR_PORT", "7497"))  # 7497 = TWS paper, 4001 = IB Gateway paper
+    IBKR_PORT: int = int(
+        os.getenv("IBKR_PORT", "7497")
+    )  # 7497 = TWS paper, 4001 = IB Gateway paper
     IBKR_CLIENT_ID: int = int(os.getenv("IBKR_CLIENT_ID", "1"))
 
     # Trading mode and safety
@@ -42,9 +45,15 @@ class Config:
 
     # Position sizing
     TARGET_PCT_STRONG: float = float(os.getenv("TARGET_PCT_STRONG", "0.03"))  # 3% NAV
-    TARGET_PCT_NORMAL: float = float(os.getenv("TARGET_PCT_NORMAL", "0.015"))  # 1.5% NAV
-    MAX_TICKER_PCT: float = float(os.getenv("MAX_TICKER_PCT", "0.05"))  # 5% max per ticker
-    MAX_DAILY_EXPOSURE: float = float(os.getenv("MAX_DAILY_EXPOSURE", "0.10"))  # 10% max new exposure per day
+    TARGET_PCT_NORMAL: float = float(
+        os.getenv("TARGET_PCT_NORMAL", "0.015")
+    )  # 1.5% NAV
+    MAX_TICKER_PCT: float = float(
+        os.getenv("MAX_TICKER_PCT", "0.05")
+    )  # 5% max per ticker
+    MAX_DAILY_EXPOSURE: float = float(
+        os.getenv("MAX_DAILY_EXPOSURE", "0.10")
+    )  # 10% max new exposure per day
 
     # Exit rules
     MAX_HOLD_DAYS: int = int(os.getenv("MAX_HOLD_DAYS", "30"))
@@ -63,13 +72,25 @@ class Config:
             errors.append("FINNHUB_API_KEY is required")
 
         if cls.TRADING_MODE not in ["paper", "live"]:
-            errors.append(f"TRADING_MODE must be 'paper' or 'live', got '{cls.TRADING_MODE}'")
+            errors.append(
+                f"TRADING_MODE must be 'paper' or 'live', got '{cls.TRADING_MODE}'"
+            )
 
         if cls.TRADING_ENABLED and cls.TRADING_MODE == "live":
-            errors.append("WARNING: TRADING_ENABLED=true with TRADING_MODE=live. This will place real trades!")
+            errors.append(
+                "WARNING: TRADING_ENABLED=true with TRADING_MODE=live. This will place real trades!"
+            )
 
         if cls.EMAIL_ENABLED:
-            if not all([cls.SMTP_HOST, cls.SMTP_USER, cls.SMTP_PASSWORD, cls.EMAIL_FROM, cls.EMAIL_TO]):
+            if not all(
+                [
+                    cls.SMTP_HOST,
+                    cls.SMTP_USER,
+                    cls.SMTP_PASSWORD,
+                    cls.EMAIL_FROM,
+                    cls.EMAIL_TO,
+                ]
+            ):
                 errors.append("EMAIL_ENABLED=true but SMTP settings incomplete")
 
         return errors

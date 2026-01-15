@@ -2,10 +2,9 @@
 Ingestion module for congressional trading data.
 Fetches from Finnhub, normalizes, deduplicates, and stores in database.
 """
-from datetime import datetime
+
 from typing import Any
 
-from app.config import config
 from app.db import db
 from app.finnhub_client import get_finnhub_client
 from app.logging import get_logger
@@ -23,7 +22,10 @@ class CongressTradeIngester:
         self.db = db
 
     def ingest_latest(
-        self, symbol: str | None = None, from_date: str | None = None, to_date: str | None = None
+        self,
+        symbol: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
     ) -> dict[str, Any]:
         """
         Fetch latest congressional trading data and store in database.
@@ -82,7 +84,9 @@ class CongressTradeIngester:
                     duplicates += 1
 
             except Exception as e:
-                logger.error(f"Failed to process record: {e}", extra={"record": raw_record})
+                logger.error(
+                    f"Failed to process record: {e}", extra={"record": raw_record}
+                )
                 errors += 1
 
         summary = {

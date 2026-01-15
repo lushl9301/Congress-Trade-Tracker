@@ -2,6 +2,7 @@
 Logging configuration for Congress Trade Tracker using Loguru.
 Provides structured logging with better defaults and automatic exception handling.
 """
+
 import sys
 from typing import Any
 
@@ -35,7 +36,12 @@ def setup_logging(level: str = "INFO", json_format: bool = False) -> None:
         logger.add(
             sys.stdout,
             level=level.upper(),
-            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level:8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> | <level>{message}</level>",
+            format=(
+                "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+                "<level>{level:8}</level> | "
+                "<cyan>{name}</cyan>:<cyan>{function}</cyan> | "
+                "<level>{message}</level>"
+            ),
             colorize=True,
             backtrace=True,
             diagnose=True,

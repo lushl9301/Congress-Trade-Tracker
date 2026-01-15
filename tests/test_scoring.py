@@ -1,6 +1,7 @@
 """
 Tests for strategy scoring and signal generation.
 """
+
 import unittest
 from datetime import date
 
@@ -87,10 +88,10 @@ class TestScoring(unittest.TestCase):
             ticker="HAL",
             transaction_type="BUY",
             trade_date=date(2021, 1, 1),
-            disclosure_date=date(2021, 1, 8),  # 7 days
+            disclosure_date=date(2021, 1, 9),  # 8 days (15 pts instead of 25)
             amount_low=50000,
             amount_high=100000,  # Moderate amount
-            owner="spouse",
+            owner="spouse",  # +5 pts
         )
 
         signal = self.strategy.generate_signal(event)

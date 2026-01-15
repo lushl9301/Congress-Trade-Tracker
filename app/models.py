@@ -2,8 +2,8 @@
 Data models for Congress Trade Tracker.
 All models use Pydantic for validation and serialization.
 """
+
 import hashlib
-import json
 from datetime import date, datetime
 from typing import Literal
 
@@ -31,7 +31,9 @@ class CongressTradeEvent(BaseModel):
     asset_type: Literal["stock", "etf", "unknown"] = Field(
         default="unknown", description="Asset type"
     )
-    transaction_type: Literal["BUY", "SELL", "OTHER"] = Field(..., description="Transaction type")
+    transaction_type: Literal["BUY", "SELL", "OTHER"] = Field(
+        ..., description="Transaction type"
+    )
 
     # Dates
     trade_date: date | None = Field(None, description="Date trade was executed")
@@ -46,7 +48,9 @@ class CongressTradeEvent(BaseModel):
     raw: dict = Field(default_factory=dict, description="Full raw API response")
 
     # Metadata
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="When record was created")
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, description="When record was created"
+    )
 
     @computed_field  # type: ignore[misc]
     @property
@@ -135,10 +139,16 @@ class TradeSignal(BaseModel):
         ..., description="Signal strength"
     )
     score: int = Field(..., ge=0, le=100, description="Numeric score (0-100)")
-    reason: list[str] = Field(default_factory=list, description="Human-readable reasons")
+    reason: list[str] = Field(
+        default_factory=list, description="Human-readable reasons"
+    )
 
-    strategy_version: str = Field(..., description="Strategy version that generated this signal")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="Signal creation time")
+    strategy_version: str = Field(
+        ..., description="Strategy version that generated this signal"
+    )
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Signal creation time"
+    )
 
     @staticmethod
     def generate_signal_id(event_id: str, strategy_version: str) -> str:
@@ -165,7 +175,9 @@ class Position(BaseModel):
     avg_cost: float = Field(..., description="Average cost basis per share")
 
     opened_at: datetime = Field(..., description="When position was opened")
-    last_updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update time")
+    last_updated_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Last update time"
+    )
 
     # Exit rules
     exit_rule: str = Field(default="HOLD_30D", description="Exit rule type")
@@ -232,12 +244,20 @@ class Order(BaseModel):
     tif: str = Field(default="DAY", description="Time in force")
 
     status: str = Field(default="PENDING", description="Order status")
-    request_payload: dict = Field(default_factory=dict, description="Order request details")
-    response_payload: dict = Field(default_factory=dict, description="Order response details")
+    request_payload: dict = Field(
+        default_factory=dict, description="Order request details"
+    )
+    response_payload: dict = Field(
+        default_factory=dict, description="Order response details"
+    )
 
     signal_id: str | None = Field(None, description="Source signal ID")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="Order creation time")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update time")
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Order creation time"
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Last update time"
+    )
 
     class Config:
         """Pydantic config."""
@@ -263,7 +283,9 @@ class Fill(BaseModel):
     price: float = Field(..., description="Fill price")
     commission: float = Field(default=0.0, description="Commission paid")
 
-    filled_at: datetime = Field(default_factory=datetime.utcnow, description="Fill timestamp")
+    filled_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Fill timestamp"
+    )
 
     class Config:
         """Pydantic config."""
@@ -280,7 +302,9 @@ class PnLSnapshot(BaseModel):
     """
 
     snapshot_id: str = Field(..., description="Snapshot ID")
-    snapshot_at: datetime = Field(default_factory=datetime.utcnow, description="Snapshot timestamp")
+    snapshot_at: datetime = Field(
+        default_factory=datetime.utcnow, description="Snapshot timestamp"
+    )
 
     total_equity: float = Field(..., description="Total equity value")
     cash: float = Field(..., description="Cash balance")
@@ -289,7 +313,9 @@ class PnLSnapshot(BaseModel):
     unrealized_pnl: float = Field(default=0.0, description="Unrealized P&L")
 
     num_positions: int = Field(default=0, description="Number of open positions")
-    positions_detail: list[dict] = Field(default_factory=list, description="Position details")
+    positions_detail: list[dict] = Field(
+        default_factory=list, description="Position details"
+    )
 
     class Config:
         """Pydantic config."""

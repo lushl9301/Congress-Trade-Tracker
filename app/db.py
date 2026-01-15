@@ -2,6 +2,7 @@
 Database module for Congress Trade Tracker.
 Uses SQLite for MVP with design that can migrate to Postgres later.
 """
+
 import json
 import sqlite3
 from contextlib import contextmanager
@@ -262,7 +263,11 @@ class Database:
                     event.asset_type,
                     event.transaction_type,
                     event.trade_date.isoformat() if event.trade_date else None,
-                    event.disclosure_date.isoformat() if event.disclosure_date else None,
+                    (
+                        event.disclosure_date.isoformat()
+                        if event.disclosure_date
+                        else None
+                    ),
                     event.delay_days,
                     event.amount_low,
                     event.amount_high,
@@ -276,7 +281,9 @@ class Database:
             logger.info(f"Inserted new event {event.event_id} for {event.ticker}")
             return True
 
-    def get_events_without_signals(self, strategy_version: str) -> list[CongressTradeEvent]:
+    def get_events_without_signals(
+        self, strategy_version: str
+    ) -> list[CongressTradeEvent]:
         """Get events that don't have signals generated yet for given strategy version."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -349,7 +356,9 @@ class Database:
                 ),
             )
 
-            logger.info(f"Inserted signal {signal.signal_id} for {signal.ticker}: {signal.action}")
+            logger.info(
+                f"Inserted signal {signal.signal_id} for {signal.ticker}: {signal.action}"
+            )
 
     def get_unexecuted_signals(self) -> list[TradeSignal]:
         """Get signals that haven't been executed yet (no order placed)."""
@@ -400,7 +409,9 @@ class Database:
                 ),
             )
 
-            logger.info(f"Upserted position for {position.ticker}: {position.qty} @ {position.avg_cost}")
+            logger.info(
+                f"Upserted position for {position.ticker}: {position.qty} @ {position.avg_cost}"
+            )
 
     def get_position(self, ticker: str) -> Position | None:
         """Get current position for a ticker."""
@@ -469,7 +480,9 @@ class Database:
                 ),
             )
 
-            logger.info(f"Inserted order {order.order_id} for {order.ticker}: {order.side} {order.qty}")
+            logger.info(
+                f"Inserted order {order.order_id} for {order.ticker}: {order.side} {order.qty}"
+            )
 
     def update_order_status(
         self,
@@ -546,7 +559,9 @@ class Database:
                 ),
             )
 
-            logger.info(f"Inserted fill {fill.fill_id}: {fill.side} {fill.qty} {fill.ticker} @ {fill.price}")
+            logger.info(
+                f"Inserted fill {fill.fill_id}: {fill.side} {fill.qty} {fill.ticker} @ {fill.price}"
+            )
 
     def get_fills_for_order(self, order_id: str) -> list[Fill]:
         """Get all fills for an order."""
@@ -579,9 +594,15 @@ class Database:
             ticker=row["ticker"],
             asset_type=row["asset_type"],
             transaction_type=row["transaction_type"],
-            trade_date=date_type.fromisoformat(row["trade_date"]) if row["trade_date"] else None,
+            trade_date=(
+                date_type.fromisoformat(row["trade_date"])
+                if row["trade_date"]
+                else None
+            ),
             disclosure_date=(
-                date_type.fromisoformat(row["disclosure_date"]) if row["disclosure_date"] else None
+                date_type.fromisoformat(row["disclosure_date"])
+                if row["disclosure_date"]
+                else None
             ),
             amount_low=row["amount_low"],
             amount_high=row["amount_high"],
@@ -631,8 +652,12 @@ class Database:
             limit_price=row["limit_price"],
             tif=row["tif"],
             status=row["status"],
-            request_payload=json.loads(row["request_payload"]) if row["request_payload"] else {},
-            response_payload=json.loads(row["response_payload"]) if row["response_payload"] else {},
+            request_payload=(
+                json.loads(row["request_payload"]) if row["request_payload"] else {}
+            ),
+            response_payload=(
+                json.loads(row["response_payload"]) if row["response_payload"] else {}
+            ),
             signal_id=row["signal_id"],
             created_at=datetime.fromisoformat(row["created_at"]),
             updated_at=datetime.fromisoformat(row["updated_at"]),

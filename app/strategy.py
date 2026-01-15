@@ -2,6 +2,7 @@
 Trading strategy module for Congress Trade Tracker.
 Implements MVP scoring rules and signal generation.
 """
+
 from typing import Any
 
 from app.config import config
@@ -59,12 +60,17 @@ class CongressTradeStrategy:
 
         if event.delay_days > self.max_delay_days:
             return self._create_ignore_signal(
-                event, [f"Delay too long: {event.delay_days} days (max {self.max_delay_days})"]
+                event,
+                [
+                    f"Delay too long: {event.delay_days} days (max {self.max_delay_days})"
+                ],
             )
 
         # === Filter: Minimum amount ===
         if event.amount_high is None or event.amount_high < self.min_amount_high:
-            amount_str = f"${event.amount_high:,.0f}" if event.amount_high else "unknown"
+            amount_str = (
+                f"${event.amount_high:,.0f}" if event.amount_high else "unknown"
+            )
             return self._create_ignore_signal(
                 event,
                 [f"Amount too small: {amount_str} (min ${self.min_amount_high:,.0f})"],
@@ -106,12 +112,16 @@ class CongressTradeStrategy:
         # === Scoring: Clustering (multiple buys of same ticker) ===
         recent_events = db.get_recent_events_by_ticker(event.ticker, days=7)
         buy_count = sum(
-            1 for e in recent_events if e.transaction_type == "BUY" and e.event_id != event.event_id
+            1
+            for e in recent_events
+            if e.transaction_type == "BUY" and e.event_id != event.event_id
         )
 
         if buy_count >= 2:
             score += 10
-            reasons.append(f"Cluster buying detected ({buy_count + 1} BUY events in 7 days)")
+            reasons.append(
+                f"Cluster buying detected ({buy_count + 1} BUY events in 7 days)"
+            )
 
         # === Cap score ===
         score = max(0, min(100, score))
@@ -120,7 +130,8 @@ class CongressTradeStrategy:
         signal = self._score_to_signal(event, score, reasons)
 
         logger.info(
-            f"Generated signal for {event.ticker}: {signal.action}/{signal.strength} (score={score})"
+            f"Generated signal for {event.ticker}: "
+            f"{signal.action}/{signal.strength} (score={score})"
         )
 
         return signal
@@ -139,7 +150,9 @@ class CongressTradeStrategy:
         Returns:
             TradeSignal
         """
-        signal_id = TradeSignal.generate_signal_id(event.event_id, self.strategy_version)
+        signal_id = TradeSignal.generate_signal_id(
+            event.event_id, self.strategy_version
+        )
 
         # For BUY transactions
         if event.transaction_type == "BUY":
@@ -214,7 +227,8 @@ class CongressTradeStrategy:
                 action="NONE",
                 strength="IGNORE",
                 score=score,
-                reason=reasons + [f"Transaction type not actionable: {event.transaction_type}"],
+                reason=reasons
+                + [f"Transaction type not actionable: {event.transaction_type}"],
                 strategy_version=self.strategy_version,
             )
 
@@ -231,7 +245,9 @@ class CongressTradeStrategy:
         Returns:
             TradeSignal with IGNORE strength
         """
-        signal_id = TradeSignal.generate_signal_id(event.event_id, self.strategy_version)
+        signal_id = TradeSignal.generate_signal_id(
+            event.event_id, self.strategy_version
+        )
 
         return TradeSignal(
             signal_id=signal_id,

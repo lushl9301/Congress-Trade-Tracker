@@ -2,9 +2,10 @@
 Order placement and management for IBKR.
 Handles order creation, submission, and status tracking.
 """
+
 import time
 import uuid
-from typing import Any, Literal
+from typing import Literal
 
 from app.config import config
 from app.db import db
@@ -51,7 +52,9 @@ class OrderManager:
                 f"TRADING_ENABLED=false, would place order: {side} {qty} {ticker} @ {order_type}"
             )
             # Create a mock order for tracking
-            order = self._create_mock_order(ticker, side, qty, order_type, limit_price, signal_id)
+            order = self._create_mock_order(
+                ticker, side, qty, order_type, limit_price, signal_id
+            )
             db.insert_order(order)
             return order
 
@@ -116,7 +119,9 @@ class OrderManager:
             )
 
             db.insert_order(order)
-            logger.info(f"Order placed successfully: {order_id} (IBKR: {trade.order.orderId})")
+            logger.info(
+                f"Order placed successfully: {order_id} (IBKR: {trade.order.orderId})"
+            )
 
             return order
 
@@ -256,9 +261,11 @@ class OrderManager:
                 side=order.side,
                 qty=ib_fill.execution.shares,
                 price=ib_fill.execution.avgPrice,
-                commission=ib_fill.commissionReport.commission
-                if ib_fill.commissionReport
-                else 0.0,
+                commission=(
+                    ib_fill.commissionReport.commission
+                    if ib_fill.commissionReport
+                    else 0.0
+                ),
             )
 
             db.insert_fill(fill)

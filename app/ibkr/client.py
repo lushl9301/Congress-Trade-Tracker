@@ -2,6 +2,7 @@
 Interactive Brokers client using ib_insync library.
 Handles connection to TWS/IB Gateway.
 """
+
 from typing import Any
 
 from app.config import config
@@ -56,9 +57,7 @@ class IBKRClient:
             return True
 
         except ImportError:
-            logger.error(
-                "ib_insync not installed. Install with: pip install ib_insync"
-            )
+            logger.error("ib_insync not installed. Install with: pip install ib_insync")
             return False
         except Exception as e:
             logger.error(f"Failed to connect to IBKR: {e}")
@@ -187,9 +186,9 @@ class IBKRClient:
                         "ticker": pos.contract.symbol,
                         "qty": pos.position,
                         "avg_cost": pos.avgCost,
-                        "market_value": pos.position * pos.marketPrice
-                        if pos.marketPrice
-                        else 0,
+                        "market_value": (
+                            pos.position * pos.marketPrice if pos.marketPrice else 0
+                        ),
                     }
                 )
 

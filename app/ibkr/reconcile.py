@@ -2,13 +2,13 @@
 Reconciliation module for syncing IBKR state with local database.
 Ensures consistency between broker and local tracking.
 """
+
 from typing import Any
 
 from app.config import config
 from app.db import db
 from app.ibkr.client import get_ibkr_client
 from app.logging import get_logger
-from app.portfolio import portfolio_manager
 
 logger = get_logger(__name__)
 
