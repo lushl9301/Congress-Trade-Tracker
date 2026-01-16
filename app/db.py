@@ -274,38 +274,63 @@ class Database:
             )
 
             # Update positions table to support paper vs live accounts
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS positions_temp AS
-                SELECT *, 'paper' as account_type FROM positions
-                """
-            )
-            cursor.execute("DROP TABLE IF EXISTS positions")
-            cursor.execute(
-                """
-                CREATE TABLE positions (
-                    ticker TEXT NOT NULL,
-                    account_type TEXT NOT NULL DEFAULT 'paper',
-                    qty REAL NOT NULL,
-                    avg_cost REAL NOT NULL,
-                    opened_at TEXT NOT NULL,
-                    last_updated_at TEXT NOT NULL,
-                    exit_rule TEXT NOT NULL,
-                    max_hold_days INTEGER NOT NULL,
-                    stop_loss_pct REAL NOT NULL,
-                    take_profit_pct REAL NOT NULL,
-                    PRIMARY KEY (ticker, account_type)
+            # Check if account_type column already exists
+            cursor.execute("PRAGMA table_info(positions)")
+            columns = [row[1] for row in cursor.fetchall()]
+
+            if "account_type" not in columns:
+                # Need to migrate - add account_type column
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS positions_temp AS
+                    SELECT *, 'paper' as account_type FROM positions
+                    """
                 )
-                """
-            )
-            # Copy data back if temp table has data
-            cursor.execute(
-                """
-                INSERT OR IGNORE INTO positions
-                SELECT * FROM positions_temp
-                """
-            )
-            cursor.execute("DROP TABLE positions_temp")
+                cursor.execute("DROP TABLE IF EXISTS positions")
+                cursor.execute(
+                    """
+                    CREATE TABLE positions (
+                        ticker TEXT NOT NULL,
+                        account_type TEXT NOT NULL DEFAULT 'paper',
+                        qty REAL NOT NULL,
+                        avg_cost REAL NOT NULL,
+                        opened_at TEXT NOT NULL,
+                        last_updated_at TEXT NOT NULL,
+                        exit_rule TEXT NOT NULL,
+                        max_hold_days INTEGER NOT NULL,
+                        stop_loss_pct REAL NOT NULL,
+                        take_profit_pct REAL NOT NULL,
+                        PRIMARY KEY (ticker, account_type)
+                    )
+                    """
+                )
+                # Copy data back if temp table has data
+                cursor.execute(
+                    """
+                    INSERT OR IGNORE INTO positions
+                    SELECT * FROM positions_temp
+                    """
+                )
+                cursor.execute("DROP TABLE positions_temp")
+            else:
+                # Schema already up to date - just ensure table exists with correct schema
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS positions (
+                        ticker TEXT NOT NULL,
+                        account_type TEXT NOT NULL DEFAULT 'paper',
+                        qty REAL NOT NULL,
+                        avg_cost REAL NOT NULL,
+                        opened_at TEXT NOT NULL,
+                        last_updated_at TEXT NOT NULL,
+                        exit_rule TEXT NOT NULL,
+                        max_hold_days INTEGER NOT NULL,
+                        stop_loss_pct REAL NOT NULL,
+                        take_profit_pct REAL NOT NULL,
+                        PRIMARY KEY (ticker, account_type)
+                    )
+                    """
+                )
 
             logger.info("Database schema initialized successfully")
 
