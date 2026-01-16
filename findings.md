@@ -109,51 +109,57 @@ for page in range(1, 51):  # Max 50 pages
 **API Host**: `politician-trade-tracker1.p.rapidapi.com`
 **User API Key**: `1faaecd8e4msh50673e7d9ebfdf4p1e7f70jsn3d98ade81d85`
 
-**Status**: ⏸️ TESTING INCOMPLETE
+**Status**: ✅ EVALUATED & DECIDED
 
-**Attempted Tests** (in sandbox):
+**User Testing Results**:
+- User tested RapidAPI externally (outside sandbox)
+- **Confirmed**: Provides individual trade data (ticker, date, amount)
+- **Decision**: SKIP integration for now, focus on paper trading
+
+**Rationale for Skipping**:
+1. CapitolTrades sufficient as primary source (HSW/FMP now require payment)
+2. Focus resources on validating paper trading strategy first
+3. Can integrate later as 2nd source for cross-validation if needed
+4. Reduces complexity for MVP testing phase
+
+**User Quote**: "to answer your questions: Test RapidAPI Politician Trade Tracker API - done, Determine if it provides individual trade data - yes, Decide: Integrate as 4th source OR skip - skip"
+
+**Future Consideration**:
+- May integrate as 2nd source alongside CapitolTrades for cross-validation
+- User mentioned: "We will rely on RapidAPI and CT data --> you can do cross validate for these data"
+- Would increase verification rate back to 75-85% (currently single-source only)
+
+**Test Infrastructure Created** (ready for future use):
+- `test_rapidapi_local.py` - Comprehensive 5-stage test
+- `RAPIDAPI_TESTING_GUIDE.md` - Complete testing documentation
+- `RAPIDAPI_NEXT_STEPS.md` - Decision tree and action plan
+
+---
+
+### 5. Data Source Strategy Update (Post-User Feedback)
+
+**Original Plan**: HSW + FMP + CT (3 sources with cross-verification)
+
+**Current Reality**: CapitolTrades only (single source)
+
+**User Feedback**:
+- "i tested HSW+FMP not working. so we have to use CT as well."
+- "We will rely on RapidAPI and CT data --> you can do cross validate for these data. Disable the other two as they need to be pay now."
+
+**Configuration Updated**:
 ```bash
-# All returned 403 Forbidden due to sandbox network restrictions
-GET /get_politicians
-GET /get_profile?name=Nancy%20Pelosi
-GET /get_trades (endpoint discovery)
+HSW_ENABLED=false          # Now requires payment
+FMP_ENABLED=false          # Now requires payment
+CT_ENABLED=true            # Primary source (free web scraping)
+DATA_SOURCE_STRATEGY=verify
 ```
 
-**Known Information** (from research):
-- Has `/get_politicians` endpoint (returns politician metadata)
-- Has `/get_profile?name=X` endpoint (returns "most traded sectors")
-- Hosted on RapidAPI (requires subscription)
-- Recent documentation from November 2025
+**Impact**:
+- ⚠️ Verification rate: 0% (single source only)
+- ✅ Still functional (CT provides comprehensive data)
+- 🔮 Can add RapidAPI later for 2-source verification
 
-**Unknown Information**:
-- ❓ Does it provide individual trade transactions?
-- ❓ Or just aggregated statistics?
-- ❓ Is the API key subscribed to the service?
-- ❓ What are rate limits?
-- ❓ Is there a free tier?
-
-**Hypothesis**:
-Based on endpoint names (`get_profile`, `most traded sectors`), this API likely provides:
-- Politician metadata (name, state, party)
-- Aggregated trade statistics
-- Sector analysis
-- **Possibly NOT** individual trade transactions
-
-**Test Script Created**: `test_rapidapi_local.py`
-- Comprehensive 5-stage testing
-- Handles subscription issues
-- Saves responses to JSON
-- Provides integration recommendation
-
-**Next Steps**:
-1. User runs test on local machine (has network access)
-2. Share results and JSON files
-3. Decide: integrate OR skip based on data format
-
-**Integration Decision**:
-- **IF** API returns individual trades (ticker, date, amount) → ✅ Integrate as 4th source
-- **IF** API returns only aggregated data → ❌ Skip it
-- **IF** API key not subscribed → ⚠️ Subscribe first, then re-test
+**Recommendation**: Validate strategy with CT first, then add RapidAPI if needed
 
 ---
 
@@ -289,11 +295,80 @@ prices = data['Close'].iloc[-1]
 
 ---
 
-## Paper Trading Strategy
+## Paper Trading Implementation (Phase 3)
+
+### ✅ Implementation Complete
+
+**All user requirements implemented**:
+1. ✅ Real-time stock price data
+2. ✅ Virtual $10,000 paper account
+3. ✅ STRONG_BUY signal filtering (configurable)
+4. ✅ On-demand execution
+5. ✅ Daily performance reports
+
+### Files Implemented
+
+**1. app/market_data.py** (240 lines)
+- `MarketDataProvider` class using yfinance
+- Price caching (5-minute TTL)
+- Batch fetching for efficiency
+- Error handling for unavailable tickers
+
+**2. app/paper_account.py** (355 lines)
+- `PaperAccount` class for virtual cash/equity management
+- Trade execution (buy/sell with position updates)
+- NAV calculation (cash + equity)
+- Performance metrics calculation
+- Position tracking
+
+**3. app/paper_trader.py** (255 lines)
+- `PaperTrader` class for signal filtering and execution
+- Configurable modes: `strong_only`, `strong_and_normal`
+- Integration with portfolio manager for position sizing
+- Signal tracking to prevent duplicates
+- Trading session management
+
+**4. app/reporting.py** (385 lines)
+- `DailyReporter` class for comprehensive reports
+- 5 sections: performance, portfolio, history, suggestions, risk metrics
+- Actionable suggestions (stop loss, take profit, time exits, new signals)
+- Risk dashboard with exposure metrics
+
+**5. Database Updates** (app/db.py)
+- New `paper_account` table
+- New `paper_trades` table
+- Updated `positions` table with account_type column
+- 7 new methods for paper trading operations
+
+**6. CLI Updates** (app/run.py)
+- `init-paper` - Initialize paper account
+- `trade` - Execute trades with signal filtering
+- `report` - Generate performance report
+- `daily` - Complete workflow (ingest → signals → trade → report)
+
+### User Requirements Analysis
+
+**Original User Requirements**:
+> "1. get real stock price data, which would be good for paper trading.
+> 2. record paper trading data and we can review the investment in a week or a month. basically, we need to plan a paper account and set initial fund.
+> 3. sort and filter only for strong buy signal."
+
+**How We Met Them**:
+1. ✅ Yahoo Finance integration with 5-min cache (real prices, 15-20 min delayed)
+2. ✅ SQLite database tracking all trades, positions, performance
+3. ✅ Configurable signal filtering (strong_only by default)
+
+**Additional User Decisions**:
+- "let's do $10,000" → Changed from $100k to $10k initial capital
+- "not so hurry. I don't have a machine right now that can run 24/7" → On-demand execution, not automated
+- "can you try configurable program? we can test/paper trade for both cases. 1. only strong buy 2. strong buy + normal buy" → Implemented both modes
+- "let's do daily, summarise performance, show portfolio, show trading history (including today's), and give suggestions" → Full daily reporting implemented
+
+### Paper Trading Strategy
 
 ### Capital Allocation
 
-**Initial Capital**: $100,000 (configurable via env var)
+**Initial Capital**: $10,000 (user requested, configurable via env var)
 
 **Position Sizing** (already implemented in portfolio.py):
 - **STRONG signals**: 3% of NAV per trade
@@ -733,7 +808,7 @@ prices = data['Close'].iloc[-1]
 
 ---
 
-**Last Updated**: 2026-01-16
-**Total Research Items**: 47
-**Key Decisions Made**: 6
-**Open Questions**: 5
+**Last Updated**: 2026-01-16 (Phase 3 Complete)
+**Total Research Items**: 48
+**Key Decisions Made**: 8
+**Implementation Status**: Paper Trading MVP Ready for Testing
