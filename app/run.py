@@ -15,7 +15,11 @@ from app.ibkr.orders import order_manager
 from app.ibkr.reconcile import run_reconciliation
 from app.ingest import run_ingestion
 from app.logging import get_logger, setup_logging
+from app.market_data import get_market_data_provider
+from app.paper_account import get_paper_account
+from app.paper_trader import get_paper_trader
 from app.portfolio import portfolio_manager
+from app.reporting import generate_daily_report
 from app.strategy import run_signal_generation
 
 logger = get_logger(__name__)
@@ -376,6 +380,148 @@ def status() -> None:
                 f"    {pos.ticker}: {pos.qty} @ ${pos.avg_cost:.2f} "
                 f"(holding {pos.holding_days} days)"
             )
+
+
+@app.command("init-paper")
+def cmd_init_paper(
+    cash: float = typer.Option(
+        None, help="Initial cash (default from config: $10,000)"
+    ),
+) -> None:
+    """Initialize paper trading account."""
+    logger.info("Initializing paper trading account")
+
+    try:
+        initial_cash = cash or config.PAPER_INITIAL_CASH
+        account = get_paper_account()
+
+        # Check if account already exists
+        existing = db.get_paper_account("default")
+        if existing:
+            typer.echo(f"\n⚠️  Paper account already exists!")
+            typer.echo(f"  Initial capital: ${existing['initial_cash']:,.2f}")
+            typer.echo(f"  Current cash:    ${existing['current_cash']:,.2f}")
+            typer.echo(f"  Created:         {existing['created_at']}")
+            typer.echo("\nTo reset, delete the database and run init-db + init-paper")
+            return
+
+        # Account created in constructor
+        typer.echo(f"\n✅ Paper trading account initialized")
+        typer.echo(f"  Account ID:      default")
+        typer.echo(f"  Initial capital: ${initial_cash:,.2f}")
+        typer.echo(f"\nNext steps:")
+        typer.echo(f"  1. Run ingestion:  python -m app.run ingest")
+        typer.echo(f"  2. Generate signals: python -m app.run signals")
+        typer.echo(f"  3. Execute trades:  python -m app.run trade --strong-only")
+        typer.echo(f"  4. View report:    python -m app.run report")
+
+    except Exception as e:
+        logger.error(f"Failed to initialize paper account: {e}")
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("trade")
+def cmd_trade(
+    strong_only: bool = typer.Option(
+        False, "--strong-only", help="Only trade STRONG_BUY signals"
+    ),
+    include_normal: bool = typer.Option(
+        False, "--include-normal", help="Include NORMAL_BUY signals"
+    ),
+) -> None:
+    """Execute paper trades based on signals."""
+    logger.info("Running paper trading session")
+
+    try:
+        # Determine filter mode
+        if strong_only:
+            filter_mode = "strong_only"
+        elif include_normal:
+            filter_mode = "strong_and_normal"
+        else:
+            # Use default from config
+            filter_mode = config.SIGNAL_FILTER_MODE
+
+        trader = get_paper_trader(signal_filter_mode=filter_mode)
+        result = trader.run_trading_session()
+
+        typer.echo(f"\n✅ Paper trading session complete")
+        typer.echo(f"\n{'='*60}")
+        typer.echo(f"  Filter mode:       {filter_mode}")
+        typer.echo(f"  Signals evaluated: {result['signals_evaluated']}")
+        typer.echo(f"  Trades executed:   {result['trades_executed']}")
+        typer.echo(f"  Trades skipped:    {result['trades_skipped']}")
+        typer.echo(f"  Total deployed:    ${result['total_notional']:,.2f}")
+        typer.echo(f"\n  NAV before:        ${result['nav_before']:,.2f}")
+        typer.echo(f"  NAV after:         ${result['nav_after']:,.2f}")
+        typer.echo(f"  Current cash:      ${result['cash']:,.2f}")
+        typer.echo(f"  Current equity:    ${result['equity']:,.2f}")
+        typer.echo(f"{'='*60}")
+
+        if result['trades_executed'] > 0:
+            typer.echo(f"\n💡 Run 'python -m app.run report' to see detailed performance")
+
+    except Exception as e:
+        logger.error(f"Paper trading failed: {e}", exc_info=True)
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("report")
+def cmd_report() -> None:
+    """Generate daily performance report."""
+    logger.info("Generating daily report")
+
+    try:
+        report = generate_daily_report()
+        typer.echo(report)
+
+    except Exception as e:
+        logger.error(f"Report generation failed: {e}")
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("daily")
+def cmd_daily(
+    strong_only: bool = typer.Option(
+        False, "--strong-only", help="Only trade STRONG_BUY signals"
+    ),
+) -> None:
+    """Run daily workflow: ingest → signals → trade → report."""
+    logger.info("Running daily workflow")
+
+    try:
+        # Step 1: Ingest
+        typer.echo("\n📥 Step 1/4: Ingesting congressional trades...")
+        ingest_result = run_ingestion()
+        typer.echo(f"  ✓ Fetched {ingest_result.get('new_events', 0)} new events")
+
+        # Step 2: Generate signals
+        typer.echo("\n🎯 Step 2/4: Generating trading signals...")
+        signal_result = run_signal_generation()
+        typer.echo(f"  ✓ Generated {signal_result.get('new_signals', 0)} new signals")
+
+        # Step 3: Execute trades
+        typer.echo("\n💰 Step 3/4: Executing paper trades...")
+        filter_mode = "strong_only" if strong_only else config.SIGNAL_FILTER_MODE
+        trader = get_paper_trader(signal_filter_mode=filter_mode)
+        trade_result = trader.run_trading_session()
+        typer.echo(f"  ✓ Executed {trade_result['trades_executed']} trades")
+
+        # Step 4: Generate report
+        typer.echo("\n📊 Step 4/4: Generating performance report...")
+        typer.echo("=" * 80)
+        report = generate_daily_report()
+        typer.echo(report)
+
+        typer.echo(f"\n✅ Daily workflow complete")
+
+    except Exception as e:
+        logger.error(f"Daily workflow failed: {e}", exc_info=True)
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @app.callback()
