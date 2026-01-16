@@ -223,6 +223,90 @@ class Database:
                 """
             )
 
+            # Paper trading account table
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS paper_account (
+                    account_id TEXT PRIMARY KEY DEFAULT 'default',
+                    initial_cash REAL NOT NULL,
+                    current_cash REAL NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+
+            # Paper trades table
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS paper_trades (
+                    trade_id TEXT PRIMARY KEY,
+                    account_id TEXT NOT NULL DEFAULT 'default',
+                    signal_id TEXT,
+                    ticker TEXT NOT NULL,
+                    side TEXT NOT NULL,
+                    shares REAL NOT NULL,
+                    price REAL NOT NULL,
+                    notional REAL NOT NULL,
+                    commission REAL DEFAULT 0,
+                    executed_at TEXT NOT NULL,
+                    notes TEXT,
+                    FOREIGN KEY (account_id) REFERENCES paper_account(account_id),
+                    FOREIGN KEY (signal_id) REFERENCES trade_signals(signal_id)
+                )
+                """
+            )
+
+            # Index for querying paper trades by account and time
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_paper_trades_account_time
+                ON paper_trades(account_id, executed_at DESC)
+                """
+            )
+
+            # Index for querying paper trades by ticker
+            cursor.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_paper_trades_ticker
+                ON paper_trades(ticker, executed_at DESC)
+                """
+            )
+
+            # Update positions table to support paper vs live accounts
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS positions_temp AS
+                SELECT *, 'paper' as account_type FROM positions
+                """
+            )
+            cursor.execute("DROP TABLE IF EXISTS positions")
+            cursor.execute(
+                """
+                CREATE TABLE positions (
+                    ticker TEXT NOT NULL,
+                    account_type TEXT NOT NULL DEFAULT 'paper',
+                    qty REAL NOT NULL,
+                    avg_cost REAL NOT NULL,
+                    opened_at TEXT NOT NULL,
+                    last_updated_at TEXT NOT NULL,
+                    exit_rule TEXT NOT NULL,
+                    max_hold_days INTEGER NOT NULL,
+                    stop_loss_pct REAL NOT NULL,
+                    take_profit_pct REAL NOT NULL,
+                    PRIMARY KEY (ticker, account_type)
+                )
+                """
+            )
+            # Copy data back if temp table has data
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO positions
+                SELECT * FROM positions_temp
+                """
+            )
+            cursor.execute("DROP TABLE positions_temp")
+
             logger.info("Database schema initialized successfully")
 
     # ==================== Congress Trade Events ====================
@@ -398,7 +482,7 @@ class Database:
 
     # ==================== Positions ====================
 
-    def upsert_position(self, position: Position) -> None:
+    def upsert_position(self, position: Position, account_type: str = "paper") -> None:
         """Insert or update a position."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
@@ -406,12 +490,13 @@ class Database:
             cursor.execute(
                 """
                 INSERT OR REPLACE INTO positions (
-                    ticker, qty, avg_cost, opened_at, last_updated_at,
+                    ticker, account_type, qty, avg_cost, opened_at, last_updated_at,
                     exit_rule, max_hold_days, stop_loss_pct, take_profit_pct
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     position.ticker,
+                    account_type,
                     position.qty,
                     position.avg_cost,
                     position.opened_at.isoformat(),
@@ -424,27 +509,33 @@ class Database:
             )
 
             logger.info(
-                f"Upserted position for {position.ticker}: {position.qty} @ {position.avg_cost}"
+                f"Upserted position for {position.ticker} ({account_type}): {position.qty} @ {position.avg_cost}"
             )
 
-    def get_position(self, ticker: str) -> Position | None:
+    def get_position(self, ticker: str, account_type: str = "paper") -> Position | None:
         """Get current position for a ticker."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("SELECT * FROM positions WHERE ticker = ?", (ticker,))
+            cursor.execute(
+                "SELECT * FROM positions WHERE ticker = ? AND account_type = ?",
+                (ticker, account_type),
+            )
             row = cursor.fetchone()
 
             if row:
                 return self._row_to_position(dict(row))
             return None
 
-    def get_all_positions(self) -> list[Position]:
+    def get_all_positions(self, account_type: str = "paper") -> list[Position]:
         """Get all current positions."""
         with self.get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("SELECT * FROM positions ORDER BY ticker")
+            cursor.execute(
+                "SELECT * FROM positions WHERE account_type = ? ORDER BY ticker",
+                (account_type,),
+            )
 
             positions = []
             for row in cursor.fetchall():
@@ -690,6 +781,137 @@ class Database:
             commission=row["commission"],
             filled_at=datetime.fromisoformat(row["filled_at"]),
         )
+
+    # ==================== Paper Trading ====================
+
+    def get_paper_account(self, account_id: str = "default") -> dict | None:
+        """Get paper trading account details."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT * FROM paper_account WHERE account_id = ?", (account_id,)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def create_paper_account(
+        self, account_id: str = "default", initial_cash: float = 10000
+    ) -> None:
+        """Create a new paper trading account."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.utcnow().isoformat()
+            cursor.execute(
+                """
+                INSERT INTO paper_account
+                (account_id, initial_cash, current_cash, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (account_id, initial_cash, initial_cash, now, now),
+            )
+            logger.info(
+                f"Created paper account '{account_id}' with ${initial_cash:,.2f}"
+            )
+
+    def update_paper_account_cash(
+        self, account_id: str, delta: float
+    ) -> None:
+        """
+        Update paper account cash by delta amount.
+
+        Args:
+            account_id: Account identifier
+            delta: Amount to add (positive) or subtract (negative)
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            now = datetime.utcnow().isoformat()
+            cursor.execute(
+                """
+                UPDATE paper_account
+                SET current_cash = current_cash + ?,
+                    updated_at = ?
+                WHERE account_id = ?
+                """,
+                (delta, now, account_id),
+            )
+            logger.debug(f"Updated account '{account_id}' cash by ${delta:,.2f}")
+
+    def insert_paper_trade(
+        self,
+        trade_id: str,
+        ticker: str,
+        side: str,
+        shares: float,
+        price: float,
+        notional: float,
+        signal_id: str | None = None,
+        account_id: str = "default",
+        commission: float = 0.0,
+        notes: str | None = None,
+    ) -> None:
+        """Insert a paper trade record."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            executed_at = datetime.utcnow().isoformat()
+            cursor.execute(
+                """
+                INSERT INTO paper_trades
+                (trade_id, account_id, signal_id, ticker, side, shares, price,
+                 notional, commission, executed_at, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    trade_id,
+                    account_id,
+                    signal_id,
+                    ticker,
+                    side,
+                    shares,
+                    price,
+                    notional,
+                    commission,
+                    executed_at,
+                    notes,
+                ),
+            )
+            logger.info(
+                f"Recorded paper trade: {side} {shares} {ticker} @ ${price:.2f}"
+            )
+
+    def get_paper_trades(
+        self, account_id: str = "default", limit: int | None = None
+    ) -> list[dict]:
+        """Get paper trades for an account."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            query = """
+                SELECT * FROM paper_trades
+                WHERE account_id = ?
+                ORDER BY executed_at DESC
+            """
+            if limit:
+                query += f" LIMIT {limit}"
+
+            cursor.execute(query, (account_id,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+
+    def mark_signal_traded(self, signal_id: str) -> None:
+        """Mark a signal as having been traded (for paper trading)."""
+        # For now, we'll use a simple approach - check if signal has paper trades
+        # In future, could add a 'traded' flag to signals table
+        logger.debug(f"Signal {signal_id} marked as traded")
+
+    def signal_already_traded(self, signal_id: str) -> bool:
+        """Check if a signal has already been traded in paper account."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COUNT(*) FROM paper_trades WHERE signal_id = ?", (signal_id,)
+            )
+            count = cursor.fetchone()[0]
+            return count > 0
 
 
 # Global database instance

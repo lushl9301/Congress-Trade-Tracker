@@ -86,6 +86,21 @@ class Config:
     # Polling frequency (minutes)
     POLL_INTERVAL_MINUTES: int = int(os.getenv("POLL_INTERVAL_MINUTES", "60"))
 
+    # Paper Trading Settings
+    PAPER_TRADING_ENABLED: bool = (
+        os.getenv("PAPER_TRADING_ENABLED", "true").lower() == "true"
+    )
+    PAPER_INITIAL_CASH: float = float(os.getenv("PAPER_INITIAL_CASH", "10000"))
+
+    # Market Data Provider
+    MARKET_DATA_PROVIDER: str = os.getenv("MARKET_DATA_PROVIDER", "yfinance")
+    PRICE_CACHE_TTL_SECONDS: int = int(os.getenv("PRICE_CACHE_TTL_SECONDS", "300"))
+
+    # Signal Filter Mode: strong_only, strong_and_normal
+    SIGNAL_FILTER_MODE: Literal["strong_only", "strong_and_normal"] = os.getenv(  # type: ignore
+        "SIGNAL_FILTER_MODE", "strong_only"
+    )
+
     @classmethod
     def validate(cls) -> list[str]:
         """Validate configuration and return list of errors."""
