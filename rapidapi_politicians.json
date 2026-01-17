@@ -1,0 +1,1642 @@
+{
+  "Michael McCaul": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "537.41M",
+    "Trades": 4826,
+    "Issuers": 509,
+    "LastTraded": "2025-11-28"
+  },
+  "Darrell Issa": {
+    "State": "California",
+    "Party": "Republican",
+    "TradeVolume": "243M",
+    "Trades": 20,
+    "Issuers": 2,
+    "LastTraded": "2025-04-10"
+  },
+  "Ro Khanna": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "213.04M",
+    "Trades": 12286,
+    "Issuers": 914,
+    "LastTraded": "2025-11-25"
+  },
+  "Josh Gottheimer": {
+    "State": "New Jersey",
+    "Party": "Democrat",
+    "TradeVolume": "200.51M",
+    "Trades": 1545,
+    "Issuers": 315,
+    "LastTraded": "2025-12-17"
+  },
+  "Jefferson Shreve": {
+    "State": "Indiana",
+    "Party": "Republican",
+    "TradeVolume": "150.90M",
+    "Trades": 625,
+    "Issuers": 305,
+    "LastTraded": "2025-12-30"
+  },
+  "Richard Blumenthal": {
+    "State": "Connecticut",
+    "Party": "Democrat",
+    "TradeVolume": "103.91M",
+    "Trades": 554,
+    "Issuers": 51,
+    "LastTraded": "2025-12-01"
+  },
+  "Rick Scott": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "63.14M",
+    "Trades": 133,
+    "Issuers": 44,
+    "LastTraded": "2025-10-02"
+  },
+  "David Trone": {
+    "State": "Maryland",
+    "Party": "Democrat",
+    "TradeVolume": "60.23M",
+    "Trades": 35,
+    "Issuers": 7,
+    "LastTraded": "2023-11-16"
+  },
+  "Daniel S. Goldman": {
+    "State": "New York",
+    "Party": "Democrat",
+    "TradeVolume": "57.67M",
+    "Trades": 1270,
+    "Issuers": 755,
+    "LastTraded": "2025-02-11"
+  },
+  "Nancy Pelosi": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "50.71M",
+    "Trades": 29,
+    "Issuers": 16,
+    "LastTraded": "2025-10-22"
+  },
+  "Scott Peters": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "50.57M",
+    "Trades": 146,
+    "Issuers": 58,
+    "LastTraded": "2025-11-20"
+  },
+  "Suzan DelBene": {
+    "State": "Washington",
+    "Party": "Democrat",
+    "TradeVolume": "46.86M",
+    "Trades": 175,
+    "Issuers": 47,
+    "LastTraded": "2025-12-17"
+  },
+  "Kevin Hern": {
+    "State": "Oklahoma",
+    "Party": "Republican",
+    "TradeVolume": "39.73M",
+    "Trades": 257,
+    "Issuers": 81,
+    "LastTraded": "2025-10-28"
+  },
+  "Don Beyer": {
+    "State": "Virginia",
+    "Party": "Democrat",
+    "TradeVolume": "31.33M",
+    "Trades": 41,
+    "Issuers": 33,
+    "LastTraded": "2025-12-18"
+  },
+  "Doris Matsui": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "31.05M",
+    "Trades": 33,
+    "Issuers": 2,
+    "LastTraded": "2025-12-15"
+  },
+  "Dave McCormick": {
+    "State": "Pennsylvania",
+    "Party": "Republican",
+    "TradeVolume": "30.58M",
+    "Trades": 213,
+    "Issuers": 93,
+    "LastTraded": "2025-12-17"
+  },
+  "Mark Warner": {
+    "State": "Virginia",
+    "Party": "Democrat",
+    "TradeVolume": "29.58M",
+    "Trades": 60,
+    "Issuers": 40,
+    "LastTraded": "2024-10-08"
+  },
+  "Gil Cisneros": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "22.36M",
+    "Trades": 826,
+    "Issuers": 362,
+    "LastTraded": "2025-12-31"
+  },
+  "Cleo Fields": {
+    "State": "Louisiana",
+    "Party": "Democrat",
+    "TradeVolume": "21.46M",
+    "Trades": 202,
+    "Issuers": 30,
+    "LastTraded": "2025-12-15"
+  },
+  "Markwayne Mullin": {
+    "State": "Oklahoma",
+    "Party": "Republican",
+    "TradeVolume": "20.30M",
+    "Trades": 411,
+    "Issuers": 154,
+    "LastTraded": "2025-12-18"
+  },
+  "Tommy Tuberville": {
+    "State": "Alabama",
+    "Party": "Republican",
+    "TradeVolume": "18.50M",
+    "Trades": 691,
+    "Issuers": 205,
+    "LastTraded": "2025-12-17"
+  },
+  "Kathy Manning": {
+    "State": "North Carolina",
+    "Party": "Democrat",
+    "TradeVolume": "17.94M",
+    "Trades": 273,
+    "Issuers": 60,
+    "LastTraded": "2025-01-01"
+  },
+  "Lisa McClain": {
+    "State": "Michigan",
+    "Party": "Republican",
+    "TradeVolume": "14.38M",
+    "Trades": 1440,
+    "Issuers": 449,
+    "LastTraded": "2025-12-15"
+  },
+  "Tim Moore": {
+    "State": "North Carolina",
+    "Party": "Republican",
+    "TradeVolume": "13.89M",
+    "Trades": 205,
+    "Issuers": 31,
+    "LastTraded": "2025-12-31"
+  },
+  "John Rose": {
+    "State": "Tennessee",
+    "Party": "Republican",
+    "TradeVolume": "13.16M",
+    "Trades": 12,
+    "Issuers": 9,
+    "LastTraded": "2025-06-23"
+  },
+  "Scott Franklin": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "12.38M",
+    "Trades": 227,
+    "Issuers": 56,
+    "LastTraded": "2025-10-14"
+  },
+  "Buddy Carter": {
+    "State": "Georgia",
+    "Party": "Republican",
+    "TradeVolume": "11.53M",
+    "Trades": 15,
+    "Issuers": 8,
+    "LastTraded": "2025-06-17"
+  },
+  "Sheri Biggs": {
+    "State": "South Carolina",
+    "Party": "Republican",
+    "TradeVolume": "10.51M",
+    "Trades": 217,
+    "Issuers": 90,
+    "LastTraded": "2025-12-12"
+  },
+  "Cynthia Lummis": {
+    "State": "Wyoming",
+    "Party": "Republican",
+    "TradeVolume": "9M",
+    "Trades": 3,
+    "Issuers": 3,
+    "LastTraded": "2025-03-01"
+  },
+  "Marjorie Taylor Greene": {
+    "State": "Georgia",
+    "Party": "Republican",
+    "TradeVolume": "8.98M",
+    "Trades": 448,
+    "Issuers": 94,
+    "LastTraded": "2025-12-12"
+  },
+  "Mark Green": {
+    "State": "Tennessee",
+    "Party": "Republican",
+    "TradeVolume": "8.90M",
+    "Trades": 58,
+    "Issuers": 6,
+    "LastTraded": "2025-06-24"
+  },
+  "Rob Bresnahan": {
+    "State": "Pennsylvania",
+    "Party": "Republican",
+    "TradeVolume": "8.25M",
+    "Trades": 648,
+    "Issuers": 317,
+    "LastTraded": "2025-12-11"
+  },
+  "John Hickenlooper": {
+    "State": "Colorado",
+    "Party": "Democrat",
+    "TradeVolume": "8.04M",
+    "Trades": 57,
+    "Issuers": 27,
+    "LastTraded": "2025-12-10"
+  },
+  "Tom Carper": {
+    "State": "Delaware",
+    "Party": "Democrat",
+    "TradeVolume": "7.02M",
+    "Trades": 294,
+    "Issuers": 127,
+    "LastTraded": "2024-12-13"
+  },
+  "Maria Elvira Salazar": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "6.43M",
+    "Trades": 38,
+    "Issuers": 18,
+    "LastTraded": "2024-10-31"
+  },
+  "Tony Wied": {
+    "State": "Wisconsin",
+    "Party": "Republican",
+    "TradeVolume": "6.05M",
+    "Trades": 39,
+    "Issuers": 28,
+    "LastTraded": "2025-10-27"
+  },
+  "Steve Cohen": {
+    "State": "Tennessee",
+    "Party": "Democrat",
+    "TradeVolume": "6.03M",
+    "Trades": 23,
+    "Issuers": 19,
+    "LastTraded": "2025-12-17"
+  },
+  "Ann Wagner": {
+    "State": "Missouri",
+    "Party": "Republican",
+    "TradeVolume": "4.55M",
+    "Trades": 22,
+    "Issuers": 22,
+    "LastTraded": "2025-12-18"
+  },
+  "Rick Allen": {
+    "State": "Georgia",
+    "Party": "Republican",
+    "TradeVolume": "4.41M",
+    "Trades": 69,
+    "Issuers": 23,
+    "LastTraded": "2025-12-12"
+  },
+  "Dan Meuser": {
+    "State": "Pennsylvania",
+    "Party": "Republican",
+    "TradeVolume": "4.28M",
+    "Trades": 25,
+    "Issuers": 11,
+    "LastTraded": "2025-02-11"
+  },
+  "Julie Johnson": {
+    "State": "Texas",
+    "Party": "Democrat",
+    "TradeVolume": "4.24M",
+    "Trades": 508,
+    "Issuers": 229,
+    "LastTraded": "2025-12-18"
+  },
+  "Jonathan Jackson": {
+    "State": "Illinois",
+    "Party": "Democrat",
+    "TradeVolume": "4.16M",
+    "Trades": 155,
+    "Issuers": 69,
+    "LastTraded": "2025-12-22"
+  },
+  "Pete Sessions": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "4.01M",
+    "Trades": 95,
+    "Issuers": 47,
+    "LastTraded": "2025-10-24"
+  },
+  "George  Whitesides": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "3.95M",
+    "Trades": 35,
+    "Issuers": 34,
+    "LastTraded": "2025-03-27"
+  },
+  "Mike Kelly": {
+    "State": "Pennsylvania",
+    "Party": "Republican",
+    "TradeVolume": "3.90M",
+    "Trades": 60,
+    "Issuers": 47,
+    "LastTraded": "2025-12-01"
+  },
+  "Jared Moskowitz": {
+    "State": "Florida",
+    "Party": "Democrat",
+    "TradeVolume": "3.77M",
+    "Trades": 382,
+    "Issuers": 99,
+    "LastTraded": "2025-10-10"
+  },
+  "Dean Phillips": {
+    "State": "Minnesota",
+    "Party": "Democrat",
+    "TradeVolume": "3.76M",
+    "Trades": 3,
+    "Issuers": 2,
+    "LastTraded": "2024-07-02"
+  },
+  "Pete Ricketts": {
+    "State": "Nebraska",
+    "Party": "Republican",
+    "TradeVolume": "3.75M",
+    "Trades": 30,
+    "Issuers": 30,
+    "LastTraded": "2023-09-21"
+  },
+  "John Boozman": {
+    "State": "Arkansas",
+    "Party": "Republican",
+    "TradeVolume": "3.52M",
+    "Trades": 345,
+    "Issuers": 113,
+    "LastTraded": "2025-12-31"
+  },
+  "Val Hoyle": {
+    "State": "Oregon",
+    "Party": "Democrat",
+    "TradeVolume": "3.40M",
+    "Trades": 392,
+    "Issuers": 193,
+    "LastTraded": "2025-09-23"
+  },
+  "Victoria Spartz": {
+    "State": "Indiana",
+    "Party": "Republican",
+    "TradeVolume": "3.29M",
+    "Trades": 11,
+    "Issuers": 1,
+    "LastTraded": "2025-04-03"
+  },
+  "James Vance": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "3.25M",
+    "Trades": 3,
+    "Issuers": 3,
+    "LastTraded": "2023-10-03"
+  },
+  "Katherine Clark": {
+    "State": "Massachusetts",
+    "Party": "Democrat",
+    "TradeVolume": "2.84M",
+    "Trades": 16,
+    "Issuers": 6,
+    "LastTraded": "2025-10-27"
+  },
+  "Greg Landsman": {
+    "State": "Ohio",
+    "Party": "Democrat",
+    "TradeVolume": "2.69M",
+    "Trades": 163,
+    "Issuers": 57,
+    "LastTraded": "2025-05-09"
+  },
+  "Virginia Foxx": {
+    "State": "North Carolina",
+    "Party": "Republican",
+    "TradeVolume": "2.66M",
+    "Trades": 158,
+    "Issuers": 34,
+    "LastTraded": "2025-12-30"
+  },
+  "Brandon Gill": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "2.64M",
+    "Trades": 23,
+    "Issuers": 7,
+    "LastTraded": "2025-10-29"
+  },
+  "Kelly Morrison": {
+    "State": "Minnesota",
+    "Party": "Democrat",
+    "TradeVolume": "2.59M",
+    "Trades": 74,
+    "Issuers": 32,
+    "LastTraded": "2025-12-15"
+  },
+  "Bill Hagerty": {
+    "State": "Tennessee",
+    "Party": "Republican",
+    "TradeVolume": "2.59M",
+    "Trades": 14,
+    "Issuers": 11,
+    "LastTraded": "2025-01-02"
+  },
+  "Earl Blumenauer": {
+    "State": "Oregon",
+    "Party": "Democrat",
+    "TradeVolume": "2.39M",
+    "Trades": 101,
+    "Issuers": 53,
+    "LastTraded": "2024-11-21"
+  },
+  "Susie Lee": {
+    "State": "Nevada",
+    "Party": "Democrat",
+    "TradeVolume": "2.34M",
+    "Trades": 30,
+    "Issuers": 21,
+    "LastTraded": "2025-07-23"
+  },
+  "John James": {
+    "State": "Michigan",
+    "Party": "Republican",
+    "TradeVolume": "2.23M",
+    "Trades": 273,
+    "Issuers": 138,
+    "LastTraded": "2024-09-04"
+  },
+  "Ashley Moody": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "2.20M",
+    "Trades": 57,
+    "Issuers": 26,
+    "LastTraded": "2025-04-04"
+  },
+  "Seth Moulton": {
+    "State": "Massachusetts",
+    "Party": "Democrat",
+    "TradeVolume": "2.18M",
+    "Trades": 8,
+    "Issuers": 3,
+    "LastTraded": "2025-07-15"
+  },
+  "Dan Bishop": {
+    "State": "North Carolina",
+    "Party": "Republican",
+    "TradeVolume": "2.09M",
+    "Trades": 9,
+    "Issuers": 1,
+    "LastTraded": "2023-10-26"
+  },
+  "Michael Burgess": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "2.04M",
+    "Trades": 89,
+    "Issuers": 29,
+    "LastTraded": "2024-09-03"
+  },
+  "Thomas Kean Jr": {
+    "State": "New Jersey",
+    "Party": "Republican",
+    "TradeVolume": "1.96M",
+    "Trades": 121,
+    "Issuers": 52,
+    "LastTraded": "2025-11-26"
+  },
+  "Bruce Westerman": {
+    "State": "Arkansas",
+    "Party": "Republican",
+    "TradeVolume": "1.90M",
+    "Trades": 213,
+    "Issuers": 98,
+    "LastTraded": "2025-04-21"
+  },
+  "Sheldon Whitehouse": {
+    "State": "Rhode Island",
+    "Party": "Democrat",
+    "TradeVolume": "1.87M",
+    "Trades": 100,
+    "Issuers": 52,
+    "LastTraded": "2025-11-21"
+  },
+  "Julia Letlow": {
+    "State": "Louisiana",
+    "Party": "Republican",
+    "TradeVolume": "1.87M",
+    "Trades": 224,
+    "Issuers": 111,
+    "LastTraded": "2025-12-17"
+  },
+  "Lois Frankel": {
+    "State": "Florida",
+    "Party": "Democrat",
+    "TradeVolume": "1.84M",
+    "Trades": 211,
+    "Issuers": 107,
+    "LastTraded": "2023-09-08"
+  },
+  "Byron Donalds": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "1.66M",
+    "Trades": 199,
+    "Issuers": 65,
+    "LastTraded": "2025-12-18"
+  },
+  "Laurel Lee": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "1.64M",
+    "Trades": 15,
+    "Issuers": 9,
+    "LastTraded": "2025-07-13"
+  },
+  "Mike Garcia": {
+    "State": "California",
+    "Party": "Republican",
+    "TradeVolume": "1.62M",
+    "Trades": 8,
+    "Issuers": 4,
+    "LastTraded": "2024-07-30"
+  },
+  "Greg Stanton": {
+    "State": "Arizona",
+    "Party": "Democrat",
+    "TradeVolume": "1.60M",
+    "Trades": 188,
+    "Issuers": 94,
+    "LastTraded": "2023-10-24"
+  },
+  "Chuck Fleischmann": {
+    "State": "Tennessee",
+    "Party": "Republican",
+    "TradeVolume": "1.59M",
+    "Trades": 159,
+    "Issuers": 61,
+    "LastTraded": "2025-10-21"
+  },
+  "French Hill": {
+    "State": "Arkansas",
+    "Party": "Republican",
+    "TradeVolume": "1.59M",
+    "Trades": 30,
+    "Issuers": 24,
+    "LastTraded": "2025-06-23"
+  },
+  "Shri Thanedar": {
+    "State": "Michigan",
+    "Party": "Democrat",
+    "TradeVolume": "1.52M",
+    "Trades": 49,
+    "Issuers": 20,
+    "LastTraded": "2024-07-01"
+  },
+  "Tina Smith": {
+    "State": "Minnesota",
+    "Party": "Democrat",
+    "TradeVolume": "1.50M",
+    "Trades": 12,
+    "Issuers": 9,
+    "LastTraded": "2025-11-21"
+  },
+  "Rudy Yakym": {
+    "State": "Indiana",
+    "Party": "Republican",
+    "TradeVolume": "1.45M",
+    "Trades": 27,
+    "Issuers": 1,
+    "LastTraded": "2025-12-23"
+  },
+  "Shelley Moore Capito": {
+    "State": "West Virginia",
+    "Party": "Republican",
+    "TradeVolume": "1.41M",
+    "Trades": 145,
+    "Issuers": 64,
+    "LastTraded": "2025-12-16"
+  },
+  "Bill Keating": {
+    "State": "Massachusetts",
+    "Party": "Democrat",
+    "TradeVolume": "1.32M",
+    "Trades": 93,
+    "Issuers": 54,
+    "LastTraded": "2025-12-05"
+  },
+  "April McClain Delaney": {
+    "State": "Maryland",
+    "Party": "Democrat",
+    "TradeVolume": "1.29M",
+    "Trades": 125,
+    "Issuers": 33,
+    "LastTraded": "2025-12-12"
+  },
+  "Doug Lamborn": {
+    "State": "Colorado",
+    "Party": "Republican",
+    "TradeVolume": "1.25M",
+    "Trades": 47,
+    "Issuers": 1,
+    "LastTraded": "2024-12-04"
+  },
+  "Ritchie Torres": {
+    "State": "New York",
+    "Party": "Democrat",
+    "TradeVolume": "1.25M",
+    "Trades": 156,
+    "Issuers": 81,
+    "LastTraded": "2025-07-11"
+  },
+  "Zoe Lofgren": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "1.24M",
+    "Trades": 101,
+    "Issuers": 95,
+    "LastTraded": "2025-12-11"
+  },
+  "Dan Newhouse": {
+    "State": "Washington",
+    "Party": "Republican",
+    "TradeVolume": "1.22M",
+    "Trades": 137,
+    "Issuers": 87,
+    "LastTraded": "2025-12-31"
+  },
+  "Mikie Sherrill": {
+    "State": "New Jersey",
+    "Party": "Democrat",
+    "TradeVolume": "1.20M",
+    "Trades": 4,
+    "Issuers": 1,
+    "LastTraded": "2025-03-07"
+  },
+  "John Curtis": {
+    "State": "Utah",
+    "Party": "Republican",
+    "TradeVolume": "1.03M",
+    "Trades": 114,
+    "Issuers": 69,
+    "LastTraded": "2024-12-11"
+  },
+  "Diana Harshbarger": {
+    "State": "Tennessee",
+    "Party": "Republican",
+    "TradeVolume": "1.03M",
+    "Trades": 116,
+    "Issuers": 59,
+    "LastTraded": "2023-02-22"
+  },
+  "Debbie Dingell": {
+    "State": "Michigan",
+    "Party": "Democrat",
+    "TradeVolume": "929K",
+    "Trades": 25,
+    "Issuers": 15,
+    "LastTraded": "2026-01-05"
+  },
+  "Michael Guest": {
+    "State": "Mississippi",
+    "Party": "Republican",
+    "TradeVolume": "920K",
+    "Trades": 57,
+    "Issuers": 46,
+    "LastTraded": "2025-10-20"
+  },
+  "Max Miller": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "919K",
+    "Trades": 66,
+    "Issuers": 26,
+    "LastTraded": "2025-10-27"
+  },
+  "Brad Schneider": {
+    "State": "Illinois",
+    "Party": "Democrat",
+    "TradeVolume": "916K",
+    "Trades": 5,
+    "Issuers": 5,
+    "LastTraded": "2025-06-09"
+  },
+  "Lindsey Graham": {
+    "State": "South Carolina",
+    "Party": "Republican",
+    "TradeVolume": "910K",
+    "Trades": 14,
+    "Issuers": 9,
+    "LastTraded": "2025-12-31"
+  },
+  "Blake Moore": {
+    "State": "Utah",
+    "Party": "Republican",
+    "TradeVolume": "875K",
+    "Trades": 40,
+    "Issuers": 16,
+    "LastTraded": "2024-01-19"
+  },
+  "Chellie Pingree": {
+    "State": "Maine",
+    "Party": "Democrat",
+    "TradeVolume": "848K",
+    "Trades": 16,
+    "Issuers": 1,
+    "LastTraded": "2025-10-20"
+  },
+  "Judy Chu": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "700K",
+    "Trades": 4,
+    "Issuers": 1,
+    "LastTraded": "2025-08-19"
+  },
+  "Stephen Lynch": {
+    "State": "Massachusetts",
+    "Party": "Democrat",
+    "TradeVolume": "680K",
+    "Trades": 9,
+    "Issuers": 9,
+    "LastTraded": "2024-06-03"
+  },
+  "David Taylor": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "649K",
+    "Trades": 75,
+    "Issuers": 28,
+    "LastTraded": "2025-12-10"
+  },
+  "Chip Roy": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "647K",
+    "Trades": 8,
+    "Issuers": 7,
+    "LastTraded": "2024-05-20"
+  },
+  "John Fetterman": {
+    "State": "Pennsylvania",
+    "Party": "Democrat",
+    "TradeVolume": "617K",
+    "Trades": 71,
+    "Issuers": 44,
+    "LastTraded": "2025-12-22"
+  },
+  "Chris Coons": {
+    "State": "Delaware",
+    "Party": "Democrat",
+    "TradeVolume": "600K",
+    "Trades": 4,
+    "Issuers": 1,
+    "LastTraded": "2024-02-06"
+  },
+  "Vicente Gonzalez": {
+    "State": "Texas",
+    "Party": "Democrat",
+    "TradeVolume": "565K",
+    "Trades": 6,
+    "Issuers": 3,
+    "LastTraded": "2025-04-07"
+  },
+  "Ted Cruz": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "550K",
+    "Trades": 2,
+    "Issuers": 1,
+    "LastTraded": "2025-11-11"
+  },
+  "Lloyd Doggett": {
+    "State": "Texas",
+    "Party": "Democrat",
+    "TradeVolume": "520K",
+    "Trades": 65,
+    "Issuers": 6,
+    "LastTraded": "2025-12-18"
+  },
+  "Jerry Moran": {
+    "State": "Kansas",
+    "Party": "Republican",
+    "TradeVolume": "505K",
+    "Trades": 57,
+    "Issuers": 24,
+    "LastTraded": "2025-09-23"
+  },
+  "Rich McCormick": {
+    "State": "Georgia",
+    "Party": "Republican",
+    "TradeVolume": "504K",
+    "Trades": 63,
+    "Issuers": 36,
+    "LastTraded": "2025-11-05"
+  },
+  "Dan Sullivan": {
+    "State": "Alaska",
+    "Party": "Republican",
+    "TradeVolume": "502K",
+    "Trades": 39,
+    "Issuers": 35,
+    "LastTraded": "2024-01-24"
+  },
+  "Tom Suozzi": {
+    "State": "New York",
+    "Party": "Democrat",
+    "TradeVolume": "486K",
+    "Trades": 24,
+    "Issuers": 11,
+    "LastTraded": "2025-11-10"
+  },
+  "Carol Miller": {
+    "State": "West Virginia",
+    "Party": "Republican",
+    "TradeVolume": "483K",
+    "Trades": 34,
+    "Issuers": 27,
+    "LastTraded": "2025-03-10"
+  },
+  "Gary Peters": {
+    "State": "Michigan",
+    "Party": "Democrat",
+    "TradeVolume": "463K",
+    "Trades": 25,
+    "Issuers": 24,
+    "LastTraded": "2025-12-12"
+  },
+  "Nicole Malliotakis": {
+    "State": "New York",
+    "Party": "Republican",
+    "TradeVolume": "447K",
+    "Trades": 11,
+    "Issuers": 8,
+    "LastTraded": "2025-12-19"
+  },
+  "Mike Collins": {
+    "State": "Georgia",
+    "Party": "Republican",
+    "TradeVolume": "443K",
+    "Trades": 40,
+    "Issuers": 7,
+    "LastTraded": "2025-08-22"
+  },
+  "Rob Wittman": {
+    "State": "Virginia",
+    "Party": "Republican",
+    "TradeVolume": "434K",
+    "Trades": 42,
+    "Issuers": 40,
+    "LastTraded": "2023-09-28"
+  },
+  "Eleanor Holmes Norton": {
+    "State": "Washington",
+    "Party": "Democrat",
+    "TradeVolume": "418K",
+    "Trades": 11,
+    "Issuers": 7,
+    "LastTraded": "2025-10-14"
+  },
+  "John Delaney": {
+    "State": "Maryland",
+    "Party": "Democrat",
+    "TradeVolume": "402K",
+    "Trades": 38,
+    "Issuers": 18,
+    "LastTraded": "2025-02-28"
+  },
+  "James Justice II": {
+    "State": "West Virginia",
+    "Party": "Republican",
+    "TradeVolume": "375K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-08-28"
+  },
+  "David Joyce": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "369K",
+    "Trades": 11,
+    "Issuers": 9,
+    "LastTraded": "2025-01-10"
+  },
+  "Angus King": {
+    "State": "Maine",
+    "Party": "Other",
+    "TradeVolume": "362K",
+    "Trades": 33,
+    "Issuers": 30,
+    "LastTraded": "2025-07-21"
+  },
+  "Ron Wyden": {
+    "State": "Oregon",
+    "Party": "Democrat",
+    "TradeVolume": "349K",
+    "Trades": 6,
+    "Issuers": 5,
+    "LastTraded": "2025-06-03"
+  },
+  "Rick Larsen": {
+    "State": "Washington",
+    "Party": "Democrat",
+    "TradeVolume": "336K",
+    "Trades": 42,
+    "Issuers": 35,
+    "LastTraded": "2026-01-07"
+  },
+  "Anna Paulina Luna": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "333K",
+    "Trades": 4,
+    "Issuers": 2,
+    "LastTraded": "2024-05-20"
+  },
+  "James Comer": {
+    "State": "Kentucky",
+    "Party": "Republican",
+    "TradeVolume": "328K",
+    "Trades": 41,
+    "Issuers": 25,
+    "LastTraded": "2025-07-03"
+  },
+  "Hal Rogers": {
+    "State": "Kentucky",
+    "Party": "Republican",
+    "TradeVolume": "321K",
+    "Trades": 37,
+    "Issuers": 24,
+    "LastTraded": "2025-11-24"
+  },
+  "Dwight Evans": {
+    "State": "Pennsylvania",
+    "Party": "Democrat",
+    "TradeVolume": "297K",
+    "Trades": 32,
+    "Issuers": 26,
+    "LastTraded": "2025-11-21"
+  },
+  "Neal Dunn": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "273K",
+    "Trades": 31,
+    "Issuers": 10,
+    "LastTraded": "2025-09-04"
+  },
+  "Susan Collins": {
+    "State": "Maine",
+    "Party": "Republican",
+    "TradeVolume": "270K",
+    "Trades": 7,
+    "Issuers": 6,
+    "LastTraded": "2025-09-30"
+  },
+  "Morgan McGarvey": {
+    "State": "Kentucky",
+    "Party": "Democrat",
+    "TradeVolume": "233K",
+    "Trades": 26,
+    "Issuers": 11,
+    "LastTraded": "2024-11-13"
+  },
+  "Katie Britt": {
+    "State": "Alabama",
+    "Party": "Republican",
+    "TradeVolume": "216K",
+    "Trades": 3,
+    "Issuers": 3,
+    "LastTraded": "2024-07-24"
+  },
+  "Mitch McConnell": {
+    "State": "Kentucky",
+    "Party": "Republican",
+    "TradeVolume": "212K",
+    "Trades": 15,
+    "Issuers": 3,
+    "LastTraded": "2025-12-24"
+  },
+  "Gerry Connolly": {
+    "State": "Virginia",
+    "Party": "Democrat",
+    "TradeVolume": "201K",
+    "Trades": 22,
+    "Issuers": 3,
+    "LastTraded": "2025-05-13"
+  },
+  "Jake Auchincloss": {
+    "State": "Massachusetts",
+    "Party": "Democrat",
+    "TradeVolume": "195K",
+    "Trades": 6,
+    "Issuers": 1,
+    "LastTraded": "2025-11-17"
+  },
+  "Roger Marshall": {
+    "State": "Kansas",
+    "Party": "Republican",
+    "TradeVolume": "175K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-08-29"
+  },
+  "Bob Latta": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "169K",
+    "Trades": 15,
+    "Issuers": 1,
+    "LastTraded": "2025-10-20"
+  },
+  "Greg Steube": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "154K",
+    "Trades": 7,
+    "Issuers": 2,
+    "LastTraded": "2025-07-10"
+  },
+  "Debbie Wasserman Schultz": {
+    "State": "Florida",
+    "Party": "Democrat",
+    "TradeVolume": "152K",
+    "Trades": 23,
+    "Issuers": 16,
+    "LastTraded": "2025-11-25"
+  },
+  "Michael Waltz": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "150K",
+    "Trades": 2,
+    "Issuers": 1,
+    "LastTraded": "2024-12-24"
+  },
+  "Sean Casten": {
+    "State": "Illinois",
+    "Party": "Democrat",
+    "TradeVolume": "146K",
+    "Trades": 6,
+    "Issuers": 1,
+    "LastTraded": "2024-07-30"
+  },
+  "Adam Smith": {
+    "State": "Washington",
+    "Party": "Democrat",
+    "TradeVolume": "144K",
+    "Trades": 18,
+    "Issuers": 18,
+    "LastTraded": "2025-08-08"
+  },
+  "Austin Scott": {
+    "State": "Georgia",
+    "Party": "Republican",
+    "TradeVolume": "136K",
+    "Trades": 17,
+    "Issuers": 9,
+    "LastTraded": "2025-06-16"
+  },
+  "David Kustoff": {
+    "State": "Tennessee",
+    "Party": "Republican",
+    "TradeVolume": "114K",
+    "Trades": 5,
+    "Issuers": 3,
+    "LastTraded": "2023-11-29"
+  },
+  "Eric Burlison": {
+    "State": "Missouri",
+    "Party": "Republican",
+    "TradeVolume": "114K",
+    "Trades": 5,
+    "Issuers": 5,
+    "LastTraded": "2023-02-06"
+  },
+  "Tom Cole": {
+    "State": "Oklahoma",
+    "Party": "Republican",
+    "TradeVolume": "98K",
+    "Trades": 3,
+    "Issuers": 2,
+    "LastTraded": "2023-07-15"
+  },
+  "Adrian Smith": {
+    "State": "Nebraska",
+    "Party": "Republican",
+    "TradeVolume": "97K",
+    "Trades": 6,
+    "Issuers": 2,
+    "LastTraded": "2025-10-17"
+  },
+  "Lance Gooden": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "91K",
+    "Trades": 3,
+    "Issuers": 3,
+    "LastTraded": "2024-11-15"
+  },
+  "Roger Williams": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "89K",
+    "Trades": 8,
+    "Issuers": 6,
+    "LastTraded": "2025-12-22"
+  },
+  "Emily Randall": {
+    "State": "Washington",
+    "Party": "Democrat",
+    "TradeVolume": "88K",
+    "Trades": 11,
+    "Issuers": 11,
+    "LastTraded": "2025-01-07"
+  },
+  "Jamie Raskin": {
+    "State": "Maryland",
+    "Party": "Democrat",
+    "TradeVolume": "83K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2024-11-13"
+  },
+  "Barry Moore": {
+    "State": "Alabama",
+    "Party": "Republican",
+    "TradeVolume": "83K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2024-03-30"
+  },
+  "Jim Jordan": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "75K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-10-27"
+  },
+  "Jennifer  McClellan": {
+    "State": "Virginia",
+    "Party": "Democrat",
+    "TradeVolume": "75K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-05-04"
+  },
+  "Jim Himes": {
+    "State": "Connecticut",
+    "Party": "Democrat",
+    "TradeVolume": "75K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-02-22"
+  },
+  "Bernie Moreno": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "73K",
+    "Trades": 6,
+    "Issuers": 6,
+    "LastTraded": "2025-12-19"
+  },
+  "Stephanie Bice": {
+    "State": "Oklahoma",
+    "Party": "Republican",
+    "TradeVolume": "65K",
+    "Trades": 2,
+    "Issuers": 1,
+    "LastTraded": "2023-09-27"
+  },
+  "Kathy Castor": {
+    "State": "Florida",
+    "Party": "Democrat",
+    "TradeVolume": "65K",
+    "Trades": 2,
+    "Issuers": 1,
+    "LastTraded": "2024-07-15"
+  },
+  "Tracey Mann": {
+    "State": "Kansas",
+    "Party": "Republican",
+    "TradeVolume": "65K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2024-04-04"
+  },
+  "Mary Gay Scanlon": {
+    "State": "Pennsylvania",
+    "Party": "Democrat",
+    "TradeVolume": "65K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2023-05-23"
+  },
+  "Brad Knott": {
+    "State": "North Carolina",
+    "Party": "Republican",
+    "TradeVolume": "49K",
+    "Trades": 3,
+    "Issuers": 2,
+    "LastTraded": "2025-01-14"
+  },
+  "Nanette Barrag\u00e1n": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "49K",
+    "Trades": 3,
+    "Issuers": 1,
+    "LastTraded": "2024-02-20"
+  },
+  "Keith Self": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "48K",
+    "Trades": 6,
+    "Issuers": 6,
+    "LastTraded": "2025-10-07"
+  },
+  "August Pfluger": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "48K",
+    "Trades": 6,
+    "Issuers": 4,
+    "LastTraded": "2025-07-01"
+  },
+  "Guy Reschenthaler": {
+    "State": "Pennsylvania",
+    "Party": "Republican",
+    "TradeVolume": "48K",
+    "Trades": 6,
+    "Issuers": 3,
+    "LastTraded": "2025-05-12"
+  },
+  "Scott DesJarlais": {
+    "State": "Tennessee",
+    "Party": "Republican",
+    "TradeVolume": "41K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2025-10-28"
+  },
+  "Jim Banks": {
+    "State": "Indiana",
+    "Party": "Republican",
+    "TradeVolume": "40K",
+    "Trades": 5,
+    "Issuers": 4,
+    "LastTraded": "2025-08-04"
+  },
+  "John McGuire": {
+    "State": "Virginia",
+    "Party": "Republican",
+    "TradeVolume": "40K",
+    "Trades": 5,
+    "Issuers": 4,
+    "LastTraded": "2025-06-30"
+  },
+  "Pete Stauber": {
+    "State": "Minnesota",
+    "Party": "Republican",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-10-27"
+  },
+  "Pat Ryan": {
+    "State": "New York",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2024-07-31"
+  },
+  "Adam Schiff": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-09-22"
+  },
+  "Donald Norcross": {
+    "State": "New Jersey",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2024-06-04"
+  },
+  "Seth Magaziner": {
+    "State": "Rhode Island",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2024-05-31"
+  },
+  "Mark Pocan": {
+    "State": "Wisconsin",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-01-21"
+  },
+  "Joe Manchin": {
+    "State": "West Virginia",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-11-07"
+  },
+  "Cathy McMorris Rodgers": {
+    "State": "Washington",
+    "Party": "Republican",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-05-12"
+  },
+  "Michael Bennet": {
+    "State": "Colorado",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-04-26"
+  },
+  "Mike Simpson": {
+    "State": "Idaho",
+    "Party": "Republican",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-03-14"
+  },
+  "Tammy Duckworth": {
+    "State": "Illinois",
+    "Party": "Democrat",
+    "TradeVolume": "33K",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-04-11"
+  },
+  "Cliff Bentz": {
+    "State": "Oregon",
+    "Party": "Republican",
+    "TradeVolume": "32K",
+    "Trades": 4,
+    "Issuers": 3,
+    "LastTraded": "2025-06-06"
+  },
+  "Deborah Ross": {
+    "State": "North Carolina",
+    "Party": "Democrat",
+    "TradeVolume": "32K",
+    "Trades": 4,
+    "Issuers": 1,
+    "LastTraded": "2024-04-17"
+  },
+  "Laura Friedman": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "24K",
+    "Trades": 3,
+    "Issuers": 2,
+    "LastTraded": "2025-09-10"
+  },
+  "Ron Estes": {
+    "State": "Kansas",
+    "Party": "Republican",
+    "TradeVolume": "24K",
+    "Trades": 3,
+    "Issuers": 1,
+    "LastTraded": "2023-04-17"
+  },
+  "Terri Sewell": {
+    "State": "Alabama",
+    "Party": "Democrat",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2025-04-10"
+  },
+  "Dave Min": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2025-03-19"
+  },
+  "Marco Rubio": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2025-01-07"
+  },
+  "Brandon Williams": {
+    "State": "New York",
+    "Party": "Republican",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 1,
+    "LastTraded": "2024-06-03"
+  },
+  "Abigail Spanberger": {
+    "State": "Virginia",
+    "Party": "Democrat",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 1,
+    "LastTraded": "2024-06-04"
+  },
+  "Jeff Duncan": {
+    "State": "South Carolina",
+    "Party": "Republican",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2023-08-25"
+  },
+  "Glenn Grothman": {
+    "State": "Wisconsin",
+    "Party": "Republican",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 1,
+    "LastTraded": "2024-03-19"
+  },
+  "Jeff Jackson": {
+    "State": "North Carolina",
+    "Party": "Democrat",
+    "TradeVolume": "16K",
+    "Trades": 2,
+    "Issuers": 2,
+    "LastTraded": "2023-01-29"
+  },
+  "Linda Sanchez": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-10-28"
+  },
+  "David Rouzer": {
+    "State": "North Carolina",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-12-09"
+  },
+  "Ed Case": {
+    "State": "Hawaii",
+    "Party": "Democrat",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-12-01"
+  },
+  "Robert Aderholt": {
+    "State": "Alabama",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-07-28"
+  },
+  "Andrew Garbarino": {
+    "State": "New York",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-08-21"
+  },
+  "Mike Kennedy": {
+    "State": "Utah",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-05-09"
+  },
+  "Jon Husted": {
+    "State": "Ohio",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-05-06"
+  },
+  "John Neely Kennedy": {
+    "State": "Louisiana",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-04-21"
+  },
+  "Brad Sherman": {
+    "State": "California",
+    "Party": "Democrat",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-03-03"
+  },
+  "Gus Bilirakis": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2025-01-27"
+  },
+  "Daniel Webster": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-03-08"
+  },
+  "Garret Graves": {
+    "State": "Louisiana",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2024-01-19"
+  },
+  "John Rutherford": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-04-28"
+  },
+  "Mike Flood": {
+    "State": "Nebraska",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-04-24"
+  },
+  "Dan Crenshaw": {
+    "State": "Texas",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-03-20"
+  },
+  "Debbie Lesko": {
+    "State": "Arizona",
+    "Party": "Republican",
+    "TradeVolume": "8,000",
+    "Trades": 1,
+    "Issuers": 1,
+    "LastTraded": "2023-03-26"
+  },
+  "Brian Mast": {
+    "State": "Florida",
+    "Party": "Republican",
+    "TradeVolume": "747",
+    "Trades": 3,
+    "Issuers": 2,
+    "LastTraded": "2024-03-04"
+  }
+}
