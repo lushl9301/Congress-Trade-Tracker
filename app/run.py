@@ -24,6 +24,30 @@ from app.strategy import run_signal_generation
 
 logger = get_logger(__name__)
 
+
+def _reset_crawl_cache() -> None:
+    """Clear cached crawl data (CapitolTrades)."""
+    import shutil
+    from pathlib import Path
+
+    cache_file = Path("./data/cache/capitol_trades_cache.json")
+    cache_dir = cache_file.parent
+
+    try:
+        if cache_file.exists():
+            cache_file.unlink()
+            logger.info(f"Deleted crawl cache: {cache_file}")
+        else:
+            logger.info(f"No crawl cache found at: {cache_file}")
+    except PermissionError as exc:
+        logger.warning(f"Could not delete cache file: {exc}")
+
+    try:
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir, ignore_errors=True)
+    except PermissionError as exc:
+        logger.warning(f"Could not delete cache directory: {exc}")
+
 # Create Typer app
 app = typer.Typer(
     name="congress-tracker",
@@ -50,11 +74,22 @@ def ingest(
     symbol: Optional[str] = typer.Option(None, help="Filter by ticker symbol"),
     from_date: Optional[str] = typer.Option(None, help="Start date (YYYY-MM-DD)"),
     to_date: Optional[str] = typer.Option(None, help="End date (YYYY-MM-DD)"),
+    reset_db: bool = typer.Option(False, "--reset-db", help="Reset database first"),
+    reset_cache: bool = typer.Option(
+        False, "--reset-cache", help="Reset crawl cache before ingestion"
+    ),
 ) -> None:
     """Fetch and ingest congressional trades from Finnhub."""
     logger.info("Running ingestion")
 
     try:
+        if reset_db:
+            logger.warning("Resetting database before ingestion")
+            db.reset_database()
+
+        if reset_cache:
+            _reset_crawl_cache()
+
         result = run_ingestion(
             symbol=symbol,
             from_date=from_date,
@@ -279,7 +314,12 @@ def reconcile() -> None:
 
 
 @app.command()
-def daily() -> None:
+def daily(
+    reset_db: bool = typer.Option(False, "--reset-db", help="Reset database first"),
+    reset_cache: bool = typer.Option(
+        False, "--reset-cache", help="Reset crawl cache before ingestion"
+    ),
+) -> None:
     """Run daily pipeline: ingest → signals → trade (if enabled)."""
     logger.info("Running daily pipeline")
 
@@ -296,6 +336,12 @@ def daily() -> None:
 
     # Step 1: Ingest
     typer.echo("\n[1/3] Running ingestion...")
+    if reset_db:
+        logger.warning("Resetting database before daily pipeline")
+        db.reset_database()
+    if reset_cache:
+        _reset_crawl_cache()
+
     ingest_result = run_ingestion()
     summary["ingestion"] = ingest_result
     typer.echo(f"  New events: {ingest_result.get('new_events', 0)}")
@@ -488,6 +534,10 @@ def cmd_daily(
     strong_only: bool = typer.Option(
         False, "--strong-only", help="Only trade STRONG_BUY signals"
     ),
+    reset_db: bool = typer.Option(False, "--reset-db", help="Reset database first"),
+    reset_cache: bool = typer.Option(
+        False, "--reset-cache", help="Reset crawl cache before ingestion"
+    ),
 ) -> None:
     """Run daily workflow: ingest → signals → trade → report."""
     logger.info("Running daily workflow")
@@ -495,6 +545,12 @@ def cmd_daily(
     try:
         # Step 1: Ingest
         typer.echo("\n📥 Step 1/4: Ingesting congressional trades...")
+        if reset_db:
+            logger.warning("Resetting database before daily workflow")
+            db.reset_database()
+        if reset_cache:
+            _reset_crawl_cache()
+
         ingest_result = run_ingestion()
         typer.echo(f"  ✓ Fetched {ingest_result.get('new_events', 0)} new events")
 

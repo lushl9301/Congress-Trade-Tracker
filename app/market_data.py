@@ -36,6 +36,7 @@ class MarketDataProvider:
         """
         self.cache_ttl = cache_ttl_seconds or config.PRICE_CACHE_TTL_SECONDS
         self.cache: Dict[str, tuple[float, float]] = {}  # {ticker: (price, timestamp)}
+        self.ticker_aliases = config.TICKER_ALIASES
 
         # Import yfinance (lazy import to avoid dependency issues)
         try:
@@ -62,39 +63,48 @@ class MarketDataProvider:
             Current price or None if unavailable
         """
         # Normalize ticker
-        ticker = ticker.upper().strip()
+        raw_ticker = (ticker or "").upper().strip()
+        if not raw_ticker:
+            logger.warning("No ticker provided for price lookup")
+            return None
+
+        candidates = self._candidate_tickers(raw_ticker)
 
         # Check cache
-        if ticker in self.cache:
-            price, cached_at = self.cache[ticker]
-            age = time.time() - cached_at
-            if age < self.cache_ttl:
-                logger.debug(f"Cache hit for {ticker}: ${price:.2f} (age: {age:.0f}s)")
-                return price
+        for candidate in candidates:
+            if candidate in self.cache:
+                price, cached_at = self.cache[candidate]
+                age = time.time() - cached_at
+                if age < self.cache_ttl:
+                    logger.debug(
+                        f"Cache hit for {candidate}: ${price:.2f} (age: {age:.0f}s)"
+                    )
+                    return price
 
         # Fetch fresh price
         try:
-            stock = self.yf.Ticker(ticker)
-            info = stock.info
+            for candidate in candidates:
+                stock = self.yf.Ticker(candidate)
+                info = stock.info
 
-            # Try multiple price fields (in order of preference)
-            price = (
-                info.get("currentPrice")
-                or info.get("regularMarketPrice")
-                or info.get("previousClose")
-            )
+                # Try multiple price fields (in order of preference)
+                price = (
+                    info.get("currentPrice")
+                    or info.get("regularMarketPrice")
+                    or info.get("previousClose")
+                )
 
-            if price and price > 0:
-                self.cache[ticker] = (price, time.time())
-                logger.debug(f"Fetched price for {ticker}: ${price:.2f}")
-                return price
-            else:
-                logger.warning(f"No valid price found for {ticker}")
-                return None
+                if price and price > 0:
+                    self.cache[candidate] = (price, time.time())
+                    self.cache[raw_ticker] = (price, time.time())
+                    logger.debug(f"Fetched price for {candidate}: ${price:.2f}")
+                    return price
 
         except Exception as e:
-            logger.warning(f"Failed to fetch price for {ticker}: {e}")
-            return None
+            logger.warning(f"Failed to fetch price for {raw_ticker}: {e}")
+
+        logger.warning(f"No valid price found for {raw_ticker}")
+        return None
 
     def get_prices_batch(
         self, tickers: List[str], use_cache: bool = True
@@ -115,7 +125,15 @@ class MarketDataProvider:
             return {}
 
         # Normalize tickers
-        tickers = [t.upper().strip() for t in tickers]
+        original_tickers = [t.upper().strip() for t in tickers if t]
+        normalized_map = {t: self._normalize_ticker(t) for t in original_tickers}
+        fetch_tickers = set()
+        for original, normalized in normalized_map.items():
+            if normalized:
+                fetch_tickers.add(normalized)
+            if original and original != normalized:
+                fetch_tickers.add(original)
+        tickers = list(fetch_tickers)
         prices = {}
 
         # If using cache, check cache first
@@ -136,7 +154,7 @@ class MarketDataProvider:
             logger.debug(
                 f"All {len(tickers)} tickers cached (TTL: {self.cache_ttl}s)"
             )
-            return prices
+            return self._map_prices_to_originals(prices, normalized_map)
 
         # Fetch uncached tickers
         logger.info(
@@ -154,7 +172,7 @@ class MarketDataProvider:
                 ticker = uncached_tickers[0]
                 try:
                     data = self.yf.download(
-                        ticker, period="1d", progress=False, show_errors=False
+                        ticker, period="1d", progress=False
                     )
                     if not data.empty and "Close" in data.columns:
                         price = float(data["Close"].iloc[-1])
@@ -172,7 +190,7 @@ class MarketDataProvider:
             else:
                 # Multiple tickers - batch fetch
                 data = self.yf.download(
-                    uncached_tickers, period="1d", progress=False, show_errors=False
+                    uncached_tickers, period="1d", progress=False
                 )
 
                 if not data.empty:
@@ -210,7 +228,46 @@ class MarketDataProvider:
             if ticker not in prices:
                 prices[ticker] = None
 
-        return prices
+        return self._map_prices_to_originals(prices, normalized_map)
+    
+    def _normalize_ticker(self, ticker: str) -> str:
+        """Normalize ticker symbol for market data lookup."""
+        normalized = ticker.upper().strip()
+        if not normalized:
+            return ""
+
+        normalized = normalized.split(":", 1)[0]
+        if normalized in self.ticker_aliases:
+            normalized = self.ticker_aliases[normalized]
+
+        normalized = normalized.replace("/", "-").replace(".", "-")
+        normalized = "".join(ch for ch in normalized if ch.isalnum() or ch == "-")
+        return normalized
+
+    def _map_prices_to_originals(
+        self, prices: Dict[str, Optional[float]], normalized_map: Dict[str, str]
+    ) -> Dict[str, Optional[float]]:
+        """Map normalized price results back to original tickers."""
+        mapped_prices: Dict[str, Optional[float]] = {}
+        for original, normalized in normalized_map.items():
+            mapped_prices[original] = prices.get(normalized) or prices.get(original)
+        return mapped_prices
+
+    def _candidate_tickers(self, ticker: str) -> List[str]:
+        """Build candidate tickers for price lookup."""
+        normalized = self._normalize_ticker(ticker)
+        candidates = []
+
+        for candidate in [ticker, normalized]:
+            if candidate and candidate not in candidates:
+                candidates.append(candidate)
+
+        if "-" in normalized:
+            alt = normalized.replace("-", ".")
+            if alt not in candidates:
+                candidates.append(alt)
+
+        return candidates
 
     def clear_cache(self):
         """Clear price cache."""

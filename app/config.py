@@ -9,6 +9,39 @@ from typing import Literal
 
 from dotenv import load_dotenv
 
+
+def _parse_optional_int(value: str | None) -> int | None:
+    """Parse optional int from environment variable."""
+    if value is None:
+        return None
+    stripped = value.strip()
+    if not stripped or stripped == "0":
+        return None
+    return int(stripped)
+
+
+def _parse_csv(value: str | None) -> list[str]:
+    """Parse comma-separated list from environment variable."""
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _parse_kv_map(value: str | None) -> dict[str, str]:
+    """Parse key=value pairs from environment variable."""
+    if not value:
+        return {}
+    pairs = {}
+    for item in value.split(","):
+        if "=" not in item:
+            continue
+        key, val = item.split("=", 1)
+        key = key.strip()
+        val = val.strip()
+        if key and val:
+            pairs[key.upper()] = val.upper()
+    return pairs
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -34,6 +67,19 @@ class Config:
     # Requires implementation: See CAPITOL_TRADES_IMPLEMENTATION.md
     CT_ENABLED: bool = os.getenv("CT_ENABLED", "false").lower() == "true"
     CT_USE_CACHE: bool = os.getenv("CT_USE_CACHE", "true").lower() == "true"
+
+    # RapidAPI Politician Trade Tracker
+    RAPIDAPI_ENABLED: bool = os.getenv("RAPIDAPI_ENABLED", "false").lower() == "true"
+    RAPIDAPI_KEY: str = os.getenv("RAPIDAPI_KEY", "")
+    RAPIDAPI_HOST: str = os.getenv(
+        "RAPIDAPI_HOST", "politician-trade-tracker1.p.rapidapi.com"
+    )
+    RAPIDAPI_PROFILE_LIMIT: int | None = _parse_optional_int(
+        os.getenv("RAPIDAPI_PROFILE_LIMIT", "")
+    )
+    RAPIDAPI_POLITICIANS: list[str] = _parse_csv(
+        os.getenv("RAPIDAPI_POLITICIANS", "")
+    )
 
     # Multi-source strategy: primary_only, fallback, all, verify
     DATA_SOURCE_STRATEGY: str = os.getenv("DATA_SOURCE_STRATEGY", "verify")
@@ -95,6 +141,9 @@ class Config:
     # Market Data Provider
     MARKET_DATA_PROVIDER: str = os.getenv("MARKET_DATA_PROVIDER", "yfinance")
     PRICE_CACHE_TTL_SECONDS: int = int(os.getenv("PRICE_CACHE_TTL_SECONDS", "300"))
+    TICKER_ALIASES: dict[str, str] = _parse_kv_map(
+        os.getenv("TICKER_ALIASES", "")
+    )
 
     # Signal Filter Mode: strong_only, strong_and_normal
     SIGNAL_FILTER_MODE: Literal["strong_only", "strong_and_normal"] = os.getenv(  # type: ignore
@@ -107,10 +156,15 @@ class Config:
         errors = []
 
         # Data source validation
-        if not cls.HSW_ENABLED and not cls.FMP_ENABLED and not cls.CT_ENABLED:
+        if (
+            not cls.HSW_ENABLED
+            and not cls.FMP_ENABLED
+            and not cls.CT_ENABLED
+            and not cls.RAPIDAPI_ENABLED
+        ):
             errors.append(
                 "At least one data source must be enabled "
-                "(HSW_ENABLED, FMP_ENABLED, or CT_ENABLED)"
+                "(HSW_ENABLED, FMP_ENABLED, CT_ENABLED, or RAPIDAPI_ENABLED)"
             )
 
         if cls.FMP_ENABLED and cls.FMP_API_KEY == "DUMMY_FMP_API_KEY_REPLACE_ME":
@@ -125,6 +179,12 @@ class Config:
                 "WARNING: CapitolTrades source enabled but requires full implementation. "
                 "See CAPITOL_TRADES_IMPLEMENTATION.md for details. "
                 "The source will not fetch data until scraping is implemented."
+            )
+
+        if cls.RAPIDAPI_ENABLED and not cls.RAPIDAPI_KEY:
+            errors.append(
+                "RAPIDAPI_ENABLED=true but RAPIDAPI_KEY is not set. "
+                "Set RAPIDAPI_KEY environment variable with your RapidAPI key."
             )
 
         if cls.DATA_SOURCE_STRATEGY not in ["primary_only", "fallback", "all", "verify"]:
@@ -175,6 +235,9 @@ class Config:
                 "fmp_configured": cls.FMP_API_KEY != "DUMMY_FMP_API_KEY_REPLACE_ME",
                 "ct_enabled": cls.CT_ENABLED,
                 "ct_use_cache": cls.CT_USE_CACHE,
+                "rapidapi_enabled": cls.RAPIDAPI_ENABLED,
+                "rapidapi_configured": bool(cls.RAPIDAPI_KEY),
+                "rapidapi_profile_limit": cls.RAPIDAPI_PROFILE_LIMIT,
                 "strategy": cls.DATA_SOURCE_STRATEGY,
             },
             "trading_mode": cls.TRADING_MODE,
@@ -184,6 +247,7 @@ class Config:
             "min_amount_high": cls.MIN_AMOUNT_HIGH,
             "ibkr_configured": bool(cls.IBKR_HOST and cls.IBKR_PORT),
             "email_enabled": cls.EMAIL_ENABLED,
+            "ticker_aliases": len(cls.TICKER_ALIASES),
         }
 
 

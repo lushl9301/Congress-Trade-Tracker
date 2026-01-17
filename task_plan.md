@@ -52,27 +52,35 @@ Build a production-ready MVP that automatically tracks congressional trading dis
 
 ---
 
-## Phase 2: RapidAPI Evaluation ✅ COMPLETE (SKIPPED)
+## Phase 2: RapidAPI Evaluation ✅ COMPLETE (INTEGRATE)
 
 ### Decision Made
-**User Decision**: SKIP RapidAPI integration
+**User Decision**: INTEGRATE RapidAPI
 **Rationale**:
 - User tested RapidAPI externally
 - Provides individual trade data (confirmed)
-- Decision: Skip integration for now, focus on paper trading
-- May revisit as 2nd data source for cross-validation later
+- Decision: Use RapidAPI alongside CapitolTrades for cross-validation
 
 ### Outcomes
 - [x] Test RapidAPI Politician Trade Tracker API - **TESTED BY USER**
 - [x] Determine if it provides individual trade data - **YES (confirmed)**
-- [x] Decide: Integrate as 4th source OR skip - **SKIP (user decision)**
+- [x] Capture sample results (Nancy Pelosi, David Trone, politicians list) - **Trade-level data present**
+- [x] Decide: Integrate as 4th source OR skip - **INTEGRATE (user decision)**
 
 ### Data Source Strategy Update
 **Current Active Sources**:
-1. CapitolTrades (CT) - PRIMARY (HSW/FMP now require payment)
-2. RapidAPI - FUTURE (for cross-validation when needed)
+1. CapitolTrades (CT) - PRIMARY
+2. RapidAPI - PRIMARY (cross-validation with CT)
 
 **User Note**: "We will rely on RapidAPI and CT data --> you can do cross validate for these data. Disable the other two as they need to be pay now."
+
+### Local Results (Provided JSON Files)
+- `rapidapi_profile_Nancy_Pelosi.json`: 29 trades, 16 issuers, last traded 2025-10-22
+- `rapidapi_profile_David_Trone.json`: 35 trades, 7 issuers, last traded 2023-11-16 (Treasury bills-heavy)
+- `rapidapi_politicians.json`: summary stats per politician (state, party, trade volume, trades, issuers, last traded)
+
+### Next Decision
+- Implement RapidAPI as a primary source and run cross-verification with CapitolTrades.
 
 ---
 
@@ -129,7 +137,7 @@ Build a production-ready MVP that automatically tracks congressional trading dis
 
 #### 3.5 Daily Workflow ✅
 - [x] `python -m app.run daily` - Complete workflow:
-  1. Fetch congressional trades (CapitolTrades)
+  1. Fetch congressional trades (CapitolTrades + RapidAPI)
   2. Generate signals
   3. Execute STRONG_BUY trades
   4. Display performance report
@@ -149,6 +157,8 @@ SIGNAL_FILTER_MODE=strong_only        # Configurable via CLI
 HSW_ENABLED=false                      # Now requires payment
 FMP_ENABLED=false                      # Now requires payment
 CT_ENABLED=true                        # Primary source (free)
+RAPIDAPI_ENABLED=true                  # Primary source (RapidAPI)
+DATA_SOURCE_STRATEGY=verify            # Cross-validate CT + RapidAPI
 ```
 
 ### Risk Controls (Implemented)
@@ -176,7 +186,7 @@ CT_ENABLED=true                        # Primary source (free)
 
 ### Known Limitations (By Design)
 1. **No 24/7 execution** - On-demand only (TODO for when user has cloud server)
-2. **Single data source** - CapitolTrades only (HSW/FMP disabled due to payment requirement)
+2. **Two primary sources** - CapitolTrades + RapidAPI (HSW/FMP disabled due to payment requirement)
 3. **Cannot test in sandbox** - Requires user's local machine with network access
 
 **Status**: ✅ IMPLEMENTATION COMPLETE, READY FOR USER TESTING
@@ -237,7 +247,7 @@ CT_ENABLED=true                        # Primary source (free)
 ### Next Steps (After Paper Trading Validation)
 1. Evaluate strategy profitability
 2. Compare STRONG_ONLY vs STRONG+NORMAL modes
-3. Consider integrating RapidAPI as 2nd source for cross-validation
+3. Monitor RapidAPI + CapitolTrades cross-validation quality and coverage
 4. Plan for 24/7 execution (deploy to cloud server or Mac mini)
 5. Consider moving to live trading if profitable
 
@@ -265,7 +275,7 @@ Phase 4: IBKR Live Trading        ░░░░░░░░░░░░░░░�
 - Portfolio manager (risk controls)
 
 ### Medium Confidence ⚠️
-- RapidAPI integration (unknown data format)
+- RapidAPI integration (active, pending cross-verification testing)
 - Market data reliability (yfinance unofficial API)
 
 ### Low Confidence (Requires Testing) 🔬
@@ -350,7 +360,7 @@ Phase 4: IBKR Live Trading        ░░░░░░░░░░░░░░░�
 
 4. **Future enhancements priority?**
    - A) 24/7 automation (requires cloud server/Mac mini)
-   - B) RapidAPI integration (2nd source for cross-validation)
+   - B) RapidAPI cross-validation improvements (CT + RapidAPI)
    - C) Backtesting with historical data
    - D) Live trading with IBKR
 

@@ -309,6 +309,15 @@ class Database:
 
             logger.info("Database schema initialized successfully")
 
+    def reset_database(self) -> None:
+        """Delete the database file and reinitialize schema."""
+        if self.db_path.exists():
+            self.db_path.unlink()
+            logger.info(f"Deleted database file: {self.db_path}")
+        else:
+            logger.info(f"Database file not found: {self.db_path}")
+        self.init_schema()
+
     # ==================== Congress Trade Events ====================
 
     def upsert_event(self, event: CongressTradeEvent) -> bool:
@@ -471,6 +480,23 @@ class Database:
                 AND s.action IN ('BUY', 'SELL')
                 AND s.strength IN ('STRONG', 'NORMAL')
                 ORDER BY s.created_at ASC
+                """
+            )
+
+            signals = []
+            for row in cursor.fetchall():
+                signals.append(self._row_to_signal(dict(row)))
+
+            return signals
+
+    def get_all_signals(self) -> list[TradeSignal]:
+        """Get all trade signals."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT * FROM trade_signals
+                ORDER BY created_at DESC
                 """
             )
 

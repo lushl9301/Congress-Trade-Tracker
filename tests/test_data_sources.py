@@ -11,6 +11,7 @@ from app.data_sources import (
     DataSourceManager,
     FinancialModelingPrepSource,
     HouseStockWatcherSource,
+    RapidAPIPoliticianTradeTrackerSource,
     SourceStrategy,
 )
 
@@ -313,3 +314,50 @@ class TestDataSourceManager:
         assert len(health["sources"]) == 1
         assert health["sources"][0]["name"] == "test_source"
         assert health["sources"][0]["available"] is True
+
+
+class TestRapidAPIPoliticianTradeTrackerSource:
+    """Tests for RapidAPI Politician Trade Tracker data source."""
+
+    def test_get_name(self):
+        """Test source name."""
+        source = RapidAPIPoliticianTradeTrackerSource(api_key="test")
+        assert source.get_name() == "rapidapi_politician_tracker"
+
+    def test_is_available_without_key(self):
+        """Test availability without API key."""
+        source = RapidAPIPoliticianTradeTrackerSource(api_key="")
+        assert source.is_available() is False
+
+    def test_normalize_trade_sell(self):
+        """Test normalizing a sell trade."""
+        source = RapidAPIPoliticianTradeTrackerSource(api_key="test")
+
+        raw_trade = {
+            "name": "Nancy Pelosi",
+            "company": "Apple Inc",
+            "ticker": "AAPL:US",
+            "trade_date": "October 22, 2025",
+            "days_until_disclosure": 2,
+            "trade_type": "sell",
+            "trade_amount": "100K-250K",
+        }
+
+        normalized = source.normalize_trade(raw_trade)
+
+        assert normalized["source"] == "rapidapi_politician_tracker"
+        assert normalized["member_name"] == "Nancy Pelosi"
+        assert normalized["ticker"] == "AAPL"
+        assert normalized["transaction_type"] == "SELL"
+        assert normalized["amount_low"] == 100000.0
+        assert normalized["amount_high"] == 250000.0
+        assert normalized["trade_date"] == date(2025, 10, 22)
+        assert normalized["disclosure_date"] == date(2025, 10, 24)
+        assert normalized["owner"] == "member"
+
+    def test_parse_amount_range(self):
+        """Test amount range parsing with suffixes."""
+        source = RapidAPIPoliticianTradeTrackerSource(api_key="test")
+
+        assert source._parse_amount_range("1M-5M") == (1000000.0, 5000000.0)
+        assert source._parse_amount_range("< 1K") == (None, 1000.0)

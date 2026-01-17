@@ -12,6 +12,7 @@ from app.data_sources import (
     DataSourceManager,
     FinancialModelingPrepSource,
     HouseStockWatcherSource,
+    RapidAPIPoliticianTradeTrackerSource,
     SourceStrategy,
 )
 from app.db import db
@@ -51,10 +52,22 @@ class CongressTradeIngester:
             fmp = FinancialModelingPrepSource(api_key=config.FMP_API_KEY)
             sources.append(fmp)
 
+        # Add RapidAPI Politician Trade Tracker if enabled
+        if config.RAPIDAPI_ENABLED:
+            logger.info("Initializing RapidAPI Politician Trade Tracker source")
+            rapidapi = RapidAPIPoliticianTradeTrackerSource(
+                api_key=config.RAPIDAPI_KEY,
+                host=config.RAPIDAPI_HOST,
+                profile_limit=config.RAPIDAPI_PROFILE_LIMIT,
+                politicians=config.RAPIDAPI_POLITICIANS,
+            )
+            sources.append(rapidapi)
+
         if not sources:
             logger.error("No data sources enabled! Check configuration.")
             raise RuntimeError(
-                "No data sources enabled. Set CT_ENABLED=true, HSW_ENABLED=true or FMP_ENABLED=true"
+                "No data sources enabled. Set CT_ENABLED=true, HSW_ENABLED=true, "
+                "FMP_ENABLED=true, or RAPIDAPI_ENABLED=true"
             )
 
         # Parse strategy from config

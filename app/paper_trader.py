@@ -6,7 +6,7 @@ based on configurable signal strength criteria.
 """
 
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from app.config import config
 from app.db import db
@@ -164,6 +164,56 @@ class PaperTrader:
 
         return result
 
+    def execute_planned_trade(
+        self, signal: TradeSignal, shares: float, price: float
+    ) -> Dict:
+        """
+        Execute a pre-planned trade with fixed shares and price.
+
+        Args:
+            signal: TradeSignal to execute
+            shares: Shares to buy
+            price: Price to execute at
+
+        Returns:
+            Dictionary with execution result
+        """
+        ticker = signal.ticker
+        result = {
+            "signal_id": signal.signal_id,
+            "ticker": ticker,
+            "strength": signal.strength,
+            "score": signal.score,
+            "executed": False,
+            "reason": None,
+            "shares": shares,
+            "price": price,
+            "notional": shares * price,
+        }
+
+        success = self.account.execute_trade(
+            ticker=ticker,
+            side="BUY",
+            shares=shares,
+            price=price,
+            signal_id=signal.signal_id,
+            commission=0.0,
+        )
+
+        if success:
+            db.mark_signal_traded(signal.signal_id)
+            result["executed"] = True
+            result["reason"] = f"Executed: {shares} shares @ ${price:.2f}"
+            logger.info(
+                f"Executed {ticker}: BUY {shares} @ ${price:.2f} "
+                f"(${result['notional']:,.2f}, strength: {signal.strength})"
+            )
+        else:
+            result["reason"] = "Trade execution failed"
+            logger.error(f"Trade execution failed for {ticker}")
+
+        return result
+
     def run_trading_session(self) -> Dict:
         """
         Run a complete trading session.
@@ -184,6 +234,8 @@ class PaperTrader:
 
         if not signals:
             logger.info("No tradeable signals found")
+            cash = self.account.get_cash()
+            equity = self.account.get_equity(self.market_data)
             return {
                 "signals_evaluated": 0,
                 "trades_executed": 0,
@@ -191,24 +243,148 @@ class PaperTrader:
                 "total_notional": 0.0,
                 "nav_before": self.account.get_nav(self.market_data),
                 "nav_after": self.account.get_nav(self.market_data),
+                "cash": cash,
+                "equity": equity,
+                "execution_results": [],
+                "timestamp": datetime.utcnow().isoformat(),
             }
 
         # Get NAV before trading
         nav_before = self.account.get_nav(self.market_data)
+        cash_available = self.account.get_cash()
 
         executed_count = 0
         skipped_count = 0
         total_notional = 0.0
         execution_results = []
 
-        logger.info(f"\n📊 Evaluating {len(signals)} signals...")
+        logger.info(f"\nEvaluating {len(signals)} signals for trade planning...")
+
+        prices = self.market_data.get_prices_batch([s.ticker for s in signals])
+        candidates: List[Tuple[TradeSignal, float, int, float, List[str]]] = []
 
         for signal in signals:
-            result = self.execute_signal(signal)
+            price = prices.get(signal.ticker)
+            if not price:
+                skipped_count += 1
+                execution_results.append(
+                    {
+                        "signal_id": signal.signal_id,
+                        "ticker": signal.ticker,
+                        "strength": signal.strength,
+                        "score": signal.score,
+                        "executed": False,
+                        "reason": "No price available",
+                        "shares": 0,
+                        "price": 0.0,
+                        "notional": 0.0,
+                    }
+                )
+                continue
+
+            shares, reasons = self.portfolio_manager.calculate_position_size(
+                ticker=signal.ticker,
+                signal_strength=signal.strength,
+                nav=nav_before,
+                current_price=price,
+            )
+
+            if shares == 0:
+                skipped_count += 1
+                execution_results.append(
+                    {
+                        "signal_id": signal.signal_id,
+                        "ticker": signal.ticker,
+                        "strength": signal.strength,
+                        "score": signal.score,
+                        "executed": False,
+                        "reason": "; ".join(reasons),
+                        "shares": 0,
+                        "price": price,
+                        "notional": 0.0,
+                    }
+                )
+                continue
+
+            notional = shares * price
+            candidates.append((signal, price, shares, notional, reasons))
+
+        if not candidates:
+            logger.info("No tradable candidates after planning")
+            return {
+                "signals_evaluated": len(signals),
+                "trades_executed": 0,
+                "trades_skipped": skipped_count,
+                "total_notional": 0.0,
+                "nav_before": nav_before,
+                "nav_after": nav_before,
+                "cash": cash_available,
+                "equity": self.account.get_equity(self.market_data),
+                "execution_results": execution_results,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+
+        strength_rank = {"STRONG": 2, "NORMAL": 1}
+        candidates.sort(
+            key=lambda item: (
+                strength_rank.get(item[0].strength, 0),
+                item[0].score,
+                -item[3],
+            ),
+            reverse=True,
+        )
+
+        daily_exposure_limit = nav_before * self.portfolio_manager.max_daily_exposure
+        exposure_used = 0.0
+
+        for signal, price, shares, notional, reasons in candidates:
+            if exposure_used + notional > daily_exposure_limit:
+                skipped_count += 1
+                execution_results.append(
+                    {
+                        "signal_id": signal.signal_id,
+                        "ticker": signal.ticker,
+                        "strength": signal.strength,
+                        "score": signal.score,
+                        "executed": False,
+                        "reason": "Daily exposure limit reached",
+                        "shares": 0,
+                        "price": price,
+                        "notional": 0.0,
+                    }
+                )
+                continue
+
+            affordable_shares = int(cash_available / price)
+            if affordable_shares <= 0:
+                skipped_count += 1
+                execution_results.append(
+                    {
+                        "signal_id": signal.signal_id,
+                        "ticker": signal.ticker,
+                        "strength": signal.strength,
+                        "score": signal.score,
+                        "executed": False,
+                        "reason": "Insufficient cash",
+                        "shares": 0,
+                        "price": price,
+                        "notional": 0.0,
+                    }
+                )
+                continue
+
+            if affordable_shares < shares:
+                shares = affordable_shares
+                notional = shares * price
+                reasons.append("Reduced shares to fit available cash")
+
+            result = self.execute_planned_trade(signal, shares, price)
             execution_results.append(result)
 
             if result["executed"]:
                 executed_count += 1
+                cash_available -= result["notional"]
+                exposure_used += result["notional"]
                 total_notional += result["notional"]
             else:
                 skipped_count += 1
