@@ -4,6 +4,7 @@ Provides structured logging with better defaults and automatic exception handlin
 """
 
 import sys
+from pathlib import Path
 from typing import Any
 
 from loguru import logger
@@ -19,6 +20,10 @@ def setup_logging(level: str = "INFO", json_format: bool = False) -> None:
     """
     # Remove default handler
     logger.remove()
+
+    # Ensure logs directory exists
+    logs_dir = Path("./logs")
+    logs_dir.mkdir(exist_ok=True)
 
     # Configure format based on preference
     if json_format:
@@ -46,6 +51,35 @@ def setup_logging(level: str = "INFO", json_format: bool = False) -> None:
             backtrace=True,
             diagnose=True,
         )
+
+    # Add file handler - main application log with rotation
+    logger.add(
+        logs_dir / "app.log",
+        level=level.upper(),
+        format=(
+            "{time:YYYY-MM-DD HH:mm:ss} | "
+            "{level:8} | "
+            "{name}:{function} | "
+            "{message}"
+        ),
+        rotation="10 MB",  # Rotate when file reaches 10MB
+        retention="30 days",  # Keep logs for 30 days
+        compression="zip",  # Compress rotated logs
+        backtrace=True,
+        diagnose=True,
+    )
+
+    # Add daily operations log - specifically for reviewing daily runs
+    logger.add(
+        logs_dir / "daily_operations_{time:YYYY-MM-DD}.log",
+        level="INFO",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level:8} | {message}",
+        rotation="00:00",  # New file each day at midnight
+        retention="90 days",  # Keep daily logs for 90 days
+        filter=lambda record: "daily_operation" in record["extra"]
+            or "CLI" in record["extra"]
+            or record["name"] == "app.run",
+    )
 
     # Reduce noise from third-party libraries by filtering
     logger.disable("urllib3")

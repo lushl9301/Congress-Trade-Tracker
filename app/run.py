@@ -20,6 +20,11 @@ from app.paper_account import get_paper_account
 from app.paper_trader import get_paper_trader
 from app.portfolio import portfolio_manager
 from app.reporting import generate_daily_report
+from app.session_logger import (
+    SessionLogger,
+    create_daily_summary,
+    save_daily_summary_to_file,
+)
 from app.strategy import run_signal_generation
 
 logger = get_logger(__name__)
@@ -542,42 +547,122 @@ def cmd_daily(
     """Run daily workflow: ingest → signals → trade → report."""
     logger.info("Running daily workflow")
 
-    try:
-        # Step 1: Ingest
-        typer.echo("\n📥 Step 1/4: Ingesting congressional trades...")
-        if reset_db:
-            logger.warning("Resetting database before daily workflow")
-            db.reset_database()
-        if reset_cache:
-            _reset_crawl_cache()
+    # Use session logger to capture all output
+    with SessionLogger("daily") as session:
+        try:
+            session.log_section("DAILY WORKFLOW START")
+            session.log(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            session.log(f"Mode: {'STRONG_ONLY' if strong_only else config.SIGNAL_FILTER_MODE}")
+            session.log(f"Reset DB: {reset_db}")
+            session.log(f"Reset Cache: {reset_cache}")
 
-        ingest_result = run_ingestion()
-        typer.echo(f"  ✓ Fetched {ingest_result.get('new_events', 0)} new events")
+            # Step 1: Ingest
+            session.log_section("Step 1/4: Ingesting Congressional Trades")
+            typer.echo("\n📥 Step 1/4: Ingesting congressional trades...")
+            if reset_db:
+                session.log("⚠ Resetting database", level="WARNING")
+                db.reset_database()
+            if reset_cache:
+                session.log("⚠ Resetting cache", level="WARNING")
+                _reset_crawl_cache()
 
-        # Step 2: Generate signals
-        typer.echo("\n🎯 Step 2/4: Generating trading signals...")
-        signal_result = run_signal_generation()
-        typer.echo(f"  ✓ Generated {signal_result.get('new_signals', 0)} new signals")
+            ingest_result = run_ingestion()
+            session.log_dict(
+                {
+                    "New events": ingest_result.get("new_events", 0),
+                    "Duplicates": ingest_result.get("duplicates", 0),
+                    "Total events": ingest_result.get("total_events", 0),
+                },
+                "Ingestion Results",
+            )
+            typer.echo(f"  ✓ Fetched {ingest_result.get('new_events', 0)} new events")
 
-        # Step 3: Execute trades
-        typer.echo("\n💰 Step 3/4: Executing paper trades...")
-        filter_mode = "strong_only" if strong_only else config.SIGNAL_FILTER_MODE
-        trader = get_paper_trader(signal_filter_mode=filter_mode)
-        trade_result = trader.run_trading_session()
-        typer.echo(f"  ✓ Executed {trade_result['trades_executed']} trades")
+            # Step 2: Generate signals
+            session.log_section("Step 2/4: Generating Trading Signals")
+            typer.echo("\n🎯 Step 2/4: Generating trading signals...")
+            signal_result = run_signal_generation()
+            signals_by_strength = signal_result.get("signals_by_strength", {})
+            session.log_dict(
+                {
+                    "New signals": signal_result.get("new_signals", 0),
+                    "STRONG": signals_by_strength.get("STRONG", 0),
+                    "NORMAL": signals_by_strength.get("NORMAL", 0),
+                    "WATCH": signals_by_strength.get("WATCH", 0),
+                    "IGNORE": signals_by_strength.get("IGNORE", 0),
+                },
+                "Signal Generation Results",
+            )
+            typer.echo(f"  ✓ Generated {signal_result.get('new_signals', 0)} new signals")
 
-        # Step 4: Generate report
-        typer.echo("\n📊 Step 4/4: Generating performance report...")
-        typer.echo("=" * 80)
-        report = generate_daily_report()
-        typer.echo(report)
+            # Step 3: Execute trades
+            session.log_section("Step 3/4: Executing Paper Trades")
+            typer.echo("\n💰 Step 3/4: Executing paper trades...")
+            filter_mode = "strong_only" if strong_only else config.SIGNAL_FILTER_MODE
+            trader = get_paper_trader(signal_filter_mode=filter_mode)
+            trade_result = trader.run_trading_session()
 
-        typer.echo(f"\n✅ Daily workflow complete")
+            session.log_dict(
+                {
+                    "Filter mode": filter_mode,
+                    "Signals evaluated": trade_result.get("signals_evaluated", 0),
+                    "Trades executed": trade_result.get("trades_executed", 0),
+                    "Trades skipped": trade_result.get("trades_skipped", 0),
+                    "Total deployed": f"${trade_result.get('total_notional', 0):,.2f}",
+                },
+                "Trading Results",
+            )
 
-    except Exception as e:
-        logger.error(f"Daily workflow failed: {e}", exc_info=True)
-        typer.echo(f"Error: {e}", err=True)
-        raise typer.Exit(code=1)
+            # Log individual trades
+            if trade_result.get("executed_trades"):
+                session.log("\nExecuted Trades:")
+                for trade in trade_result["executed_trades"]:
+                    session.log(
+                        f"  • {trade['side']} {trade['shares']:.2f} {trade['ticker']} "
+                        f"@ ${trade['price']:.2f} (${trade['notional']:.2f})"
+                    )
+
+            typer.echo(f"  ✓ Executed {trade_result['trades_executed']} trades")
+
+            # Step 4: Generate report
+            session.log_section("Step 4/4: Generating Performance Report")
+            typer.echo("\n📊 Step 4/4: Generating performance report...")
+            typer.echo("=" * 80)
+            report = generate_daily_report()
+            typer.echo(report)
+
+            # Also log report to session file
+            session.log("\nPerformance Report:")
+            for line in report.split("\n"):
+                if line.strip():
+                    session.log(f"  {line}")
+
+            # Get performance metrics for summary
+            account = get_paper_account()
+            market_data = get_market_data_provider()
+            performance = account.get_performance(market_data)
+
+            # Create and save daily summary
+            summary = create_daily_summary(
+                ingest_result=ingest_result,
+                signals_result=signal_result,
+                trade_result=trade_result,
+                performance=performance,
+            )
+            session.log("\n" + summary)
+            typer.echo(summary)
+
+            # Save to dedicated summary file
+            summary_file = save_daily_summary_to_file(summary)
+            session.log(f"\n✅ Daily summary saved to: {summary_file}")
+
+            typer.echo(f"\n✅ Daily workflow complete")
+            typer.echo(f"📄 Session log: {session.session_file}")
+
+        except Exception as e:
+            session.log(f"❌ ERROR: {e}", level="ERROR")
+            logger.error(f"Daily workflow failed: {e}", exc_info=True)
+            typer.echo(f"Error: {e}", err=True)
+            raise typer.Exit(code=1)
 
 
 @app.callback()
