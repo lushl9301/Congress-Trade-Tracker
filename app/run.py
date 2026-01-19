@@ -1,0 +1,703 @@
+"""
+CLI runner for Congress Trade Tracker.
+Main entry point for all commands (using Typer for better UX).
+"""
+
+from datetime import datetime
+from typing import Any, Optional
+
+import typer
+
+from app.config import config
+from app.db import db
+from app.ibkr.client import get_ibkr_client
+from app.ibkr.orders import order_manager
+from app.ibkr.reconcile import run_reconciliation
+from app.ingest import run_ingestion
+from app.logging import get_logger, setup_logging
+from app.market_data import get_market_data_provider
+from app.paper_account import get_paper_account
+from app.paper_trader import get_paper_trader
+from app.portfolio import portfolio_manager
+from app.reporting import generate_daily_report
+from app.session_logger import (
+    SessionLogger,
+    create_daily_summary,
+    save_daily_summary_to_file,
+)
+from app.strategy import run_signal_generation
+
+logger = get_logger(__name__)
+
+
+def _reset_crawl_cache() -> None:
+    """Clear cached crawl data (CapitolTrades)."""
+    import shutil
+    from pathlib import Path
+
+    cache_file = Path("./data/cache/capitol_trades_cache.json")
+    cache_dir = cache_file.parent
+
+    try:
+        if cache_file.exists():
+            cache_file.unlink()
+            logger.info(f"Deleted crawl cache: {cache_file}")
+        else:
+            logger.info(f"No crawl cache found at: {cache_file}")
+    except PermissionError as exc:
+        logger.warning(f"Could not delete cache file: {exc}")
+
+    try:
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir, ignore_errors=True)
+    except PermissionError as exc:
+        logger.warning(f"Could not delete cache directory: {exc}")
+
+# Create Typer app
+app = typer.Typer(
+    name="congress-tracker",
+    help="Congress Trade Tracker - Automated trading based on congressional disclosures",
+    add_completion=False,
+)
+
+
+@app.command("init-db")
+def cmd_init_db() -> None:
+    """Initialize database schema."""
+    logger.info("Initializing database")
+    try:
+        db.init_schema()
+        typer.echo(f"✓ Database initialized successfully at {db.db_path}")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def ingest(
+    symbol: Optional[str] = typer.Option(None, help="Filter by ticker symbol"),
+    from_date: Optional[str] = typer.Option(None, help="Start date (YYYY-MM-DD)"),
+    to_date: Optional[str] = typer.Option(None, help="End date (YYYY-MM-DD)"),
+    reset_db: bool = typer.Option(False, "--reset-db", help="Reset database first"),
+    reset_cache: bool = typer.Option(
+        False, "--reset-cache", help="Reset crawl cache before ingestion"
+    ),
+) -> None:
+    """Fetch and ingest congressional trades from Finnhub."""
+    logger.info("Running ingestion")
+
+    try:
+        if reset_db:
+            logger.warning("Resetting database before ingestion")
+            db.reset_database()
+
+        if reset_cache:
+            _reset_crawl_cache()
+
+        result = run_ingestion(
+            symbol=symbol,
+            from_date=from_date,
+            to_date=to_date,
+        )
+
+        typer.echo("\n=== Ingestion Summary ===")
+        typer.echo("Status: {result['status']}")
+        typer.echo(f"Fetched: {result.get('fetched', 0)} records")
+        typer.echo(f"New events: {result.get('new_events', 0)}")
+        typer.echo(f"Duplicates: {result.get('duplicates', 0)}")
+
+        if result.get("errors", 0) > 0:
+            typer.echo(f"Errors: {result['errors']}")
+
+        if result["status"] != "success":
+            raise typer.Exit(code=1)
+
+    except Exception as e:
+        logger.error(f"Ingestion failed: {e}", exc_info=True)
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def signals() -> None:
+    """Generate trading signals from events."""
+    logger.info("Generating signals")
+
+    try:
+        result = run_signal_generation()
+
+        typer.echo("\n=== Signal Generation Summary ===")
+        typer.echo("Status: {result['status']}")
+        typer.echo(f"Processed: {result.get('processed', 0)} events")
+        typer.echo("\nSignals by strength:")
+        for strength, count in result.get("signals_by_strength", {}).items():
+            typer.echo(f"  {strength}: {count}")
+
+        if result["status"] != "success":
+            raise typer.Exit(code=1)
+
+    except Exception as e:
+        logger.error(f"Signal generation failed: {e}", exc_info=True)
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def trade() -> None:
+    """Execute trading signals (respects TRADING_ENABLED flag)."""
+    logger.info("Running trade execution")
+
+    if not config.TRADING_ENABLED:
+        typer.echo("\n⚠️  WARNING: TRADING_ENABLED=false")
+        typer.echo("Orders will be logged but NOT submitted to IBKR\n")
+
+    try:
+        # Get unexecuted signals
+        signals = db.get_unexecuted_signals()
+
+        if not signals:
+            typer.echo("No signals to execute")
+            return
+
+        typer.echo(f"\n=== Found {len(signals)} signals to execute ===\n")
+
+        # Get NAV for position sizing
+        client = get_ibkr_client()
+        if config.TRADING_ENABLED:
+            if not client.connect():
+                typer.echo("Error: Cannot connect to IBKR", err=True)
+                raise typer.Exit(code=1)
+            nav = client.get_account_value("NetLiquidation")
+        else:
+            nav = 100000.0  # Mock NAV for dry run
+
+        typer.echo(f"Portfolio NAV: ${nav:,.2f}\n")
+
+        orders_placed = 0
+        orders_skipped = 0
+        errors = []
+
+        for signal in signals:
+            try:
+                # Skip signals with no action
+                if signal.action == "NONE":
+                    orders_skipped += 1
+                    continue
+
+                # Get current price
+                if config.TRADING_ENABLED:
+                    current_price = client.get_market_price(signal.ticker)
+                else:
+                    current_price = 100.0  # Mock price
+
+                if not current_price:
+                    logger.warning(f"Cannot get price for {signal.ticker}, skipping")
+                    orders_skipped += 1
+                    continue
+
+                # Calculate position size
+                qty, reasons = portfolio_manager.calculate_position_size(
+                    signal.ticker, signal.strength, nav, current_price
+                )
+
+                if qty == 0:
+                    typer.echo(f"SKIP {signal.ticker}: {', '.join(reasons)}")
+                    orders_skipped += 1
+                    continue
+
+                # Check daily exposure limit
+                notional = qty * current_price
+                allowed, reason = portfolio_manager.check_daily_exposure_limit(
+                    nav, notional
+                )
+
+                if not allowed:
+                    typer.echo(f"SKIP {signal.ticker}: {reason}")
+                    orders_skipped += 1
+                    continue
+
+                # Place order
+                typer.echo(
+                    f"PLACE {signal.action} {qty} {signal.ticker} @ ${current_price:.2f} "
+                    f"(notional: ${notional:,.2f})"
+                )
+                typer.echo(f"  Signal: {signal.strength} (score={signal.score})")
+                typer.echo(f"  Reasons: {', '.join(signal.reason)}")
+
+                order = order_manager.place_order(
+                    ticker=signal.ticker,
+                    side=signal.action,
+                    qty=qty,
+                    order_type="MKT",
+                    signal_id=signal.signal_id,
+                )
+
+                if order:
+                    orders_placed += 1
+                    typer.echo(f"  ✓ Order placed: {order.order_id}")
+
+                    # Poll status if trading enabled
+                    if config.TRADING_ENABLED and order.status != "MOCK_DISABLED":
+                        status = order_manager.poll_order_status(
+                            order.order_id, timeout=30
+                        )
+                        typer.echo(f"  Status: {status}\n")
+                else:
+                    orders_skipped += 1
+                    typer.echo("  ✗ Order failed\n")
+
+            except Exception as e:
+                logger.error(f"Error processing signal {signal.signal_id}: {e}")
+                errors.append(str(e))
+                orders_skipped += 1
+
+        # Disconnect
+        if config.TRADING_ENABLED:
+            client.disconnect()
+
+        # Print summary
+        typer.echo("\n=== Trade Execution Summary ===")
+        typer.echo(f"Orders placed: {orders_placed}")
+        typer.echo(f"Orders skipped: {orders_skipped}")
+        typer.echo(f"Errors: {len(errors)}")
+
+        if errors:
+            typer.echo("\nErrors:")
+            for err in errors:
+                typer.echo(f"  - {err}")
+
+    except Exception as e:
+        logger.error(f"Trade execution failed: {e}", exc_info=True)
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def reconcile() -> None:
+    """Reconcile IBKR state with local database."""
+    logger.info("Running reconciliation")
+
+    try:
+        result = run_reconciliation()
+
+        typer.echo("\n=== Reconciliation Summary ===")
+        typer.echo("Status: {result['status']}")
+
+        # Positions
+        pos_result = result.get("positions", {})
+        typer.echo("\nPositions:")
+        typer.echo(f"  IBKR: {pos_result.get('ibkr_positions', 0)}")
+        typer.echo(f"  Local: {pos_result.get('local_positions', 0)}")
+        typer.echo(f"  Discrepancies: {pos_result.get('discrepancies', 0)}")
+
+        if pos_result.get("discrepancies", 0) > 0:
+            typer.echo("\n  Details:")
+            for disc in pos_result.get("details", []):
+                typer.echo(f"    {disc}")
+
+        # Orders
+        ord_result = result.get("orders", {})
+        typer.echo("\nOpen Orders:")
+        typer.echo(f"  IBKR: {ord_result.get('ibkr_open_orders', 0)}")
+
+        # Account
+        acc_result = result.get("account", {})
+        if acc_result.get("status") == "success":
+            typer.echo("\nAccount:")
+            typer.echo(
+                f"  Net Liquidation: ${acc_result.get('net_liquidation', 0):,.2f}"
+            )
+            typer.echo(f"  Cash: ${acc_result.get('total_cash', 0):,.2f}")
+            typer.echo(f"  Buying Power: ${acc_result.get('buying_power', 0):,.2f}")
+            typer.echo(f"  Mode: {acc_result.get('mode', 'unknown').upper()}")
+
+    except Exception as e:
+        logger.error(f"Reconciliation failed: {e}", exc_info=True)
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def daily(
+    reset_db: bool = typer.Option(False, "--reset-db", help="Reset database first"),
+    reset_cache: bool = typer.Option(
+        False, "--reset-cache", help="Reset crawl cache before ingestion"
+    ),
+) -> None:
+    """Run daily pipeline: ingest → signals → trade (if enabled)."""
+    logger.info("Running daily pipeline")
+
+    typer.echo(f"\n{'='*60}")
+    typer.echo("Congress Trade Tracker - Daily Pipeline")
+    typer.echo(f"Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    typer.echo(f"Mode: {config.TRADING_MODE.upper()}")
+    typer.echo(f"Trading Enabled: {config.TRADING_ENABLED}")
+    typer.echo(f"{'='*60}\n")
+
+    summary: dict[str, Any] = {
+        "date": datetime.utcnow().strftime("%Y-%m-%d"),
+    }
+
+    # Step 1: Ingest
+    typer.echo("\n[1/3] Running ingestion...")
+    if reset_db:
+        logger.warning("Resetting database before daily pipeline")
+        db.reset_database()
+    if reset_cache:
+        _reset_crawl_cache()
+
+    ingest_result = run_ingestion()
+    summary["ingestion"] = ingest_result
+    typer.echo(f"  New events: {ingest_result.get('new_events', 0)}")
+    typer.echo(f"  Duplicates: {ingest_result.get('duplicates', 0)}")
+
+    # Step 2: Generate signals
+    typer.echo("\n[2/3] Generating signals...")
+    signals_result = run_signal_generation()
+    summary["signals"] = signals_result.get("signals_by_strength", {})
+    typer.echo(
+        f"  STRONG: {signals_result.get('signals_by_strength', {}).get('STRONG', 0)}"
+    )
+    typer.echo(
+        f"  NORMAL: {signals_result.get('signals_by_strength', {}).get('NORMAL', 0)}"
+    )
+
+    # Step 3: Execute trades (only if enabled)
+    typer.echo("\n[3/3] Executing trades...")
+    if config.TRADING_ENABLED:
+        # Would call trade execution here
+        typer.echo("  (Trade execution via 'trade' command)")
+        summary["trading"] = {"note": "Run 'trade' command separately"}
+    else:
+        typer.echo("  Skipped (TRADING_ENABLED=false)")
+        summary["trading"] = {"note": "Trading disabled"}
+
+    # Portfolio summary
+    positions = db.get_all_positions()
+    summary["portfolio"] = {
+        "num_positions": len(positions),
+        "total_notional": sum(p.qty * p.avg_cost for p in positions),
+    }
+
+    typer.echo("\n" + "=" * 60)
+    typer.echo("Daily pipeline complete")
+    typer.echo(f"Positions: {len(positions)}")
+    typer.echo("=" * 60 + "\n")
+
+
+@app.command()
+def status() -> None:
+    """Show system status and portfolio summary."""
+    typer.echo("\n=== Congress Trade Tracker Status ===\n")
+
+    # Config
+    typer.echo("Configuration:")
+    typer.echo(f"  Database: {config.DB_PATH}")
+    typer.echo(f"  Trading Mode: {config.TRADING_MODE.upper()}")
+    typer.echo(f"  Trading Enabled: {config.TRADING_ENABLED}")
+    typer.echo(f"  Strategy Version: {config.STRATEGY_VERSION}")
+    typer.echo(f"  Email Enabled: {config.EMAIL_ENABLED}")
+
+    # Database stats
+    typer.echo("\nDatabase:")
+    with db.get_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM congress_trade_events")
+        events_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM trade_signals")
+        signals_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM orders")
+        orders_count = cursor.fetchone()[0]
+
+        typer.echo(f"  Events: {events_count}")
+        typer.echo(f"  Signals: {signals_count}")
+        typer.echo(f"  Orders: {orders_count}")
+
+    # Portfolio
+    typer.echo("\nPortfolio:")
+    positions = db.get_all_positions()
+    typer.echo(f"  Positions: {len(positions)}")
+
+    if positions:
+        total_notional = sum(p.qty * p.avg_cost for p in positions)
+        typer.echo(f"  Total Value: ${total_notional:,.2f}")
+        typer.echo("\n  Holdings:")
+        for pos in positions:
+            typer.echo(
+                f"    {pos.ticker}: {pos.qty} @ ${pos.avg_cost:.2f} "
+                f"(holding {pos.holding_days} days)"
+            )
+
+
+@app.command("init-paper")
+def cmd_init_paper(
+    cash: float = typer.Option(
+        None, help="Initial cash (default from config: $10,000)"
+    ),
+) -> None:
+    """Initialize paper trading account."""
+    logger.info("Initializing paper trading account")
+
+    try:
+        initial_cash = cash or config.PAPER_INITIAL_CASH
+        account = get_paper_account()
+
+        # Check if account already exists
+        existing = db.get_paper_account("default")
+        if existing:
+            typer.echo(f"\n⚠️  Paper account already exists!")
+            typer.echo(f"  Initial capital: ${existing['initial_cash']:,.2f}")
+            typer.echo(f"  Current cash:    ${existing['current_cash']:,.2f}")
+            typer.echo(f"  Created:         {existing['created_at']}")
+            typer.echo("\nTo reset, delete the database and run init-db + init-paper")
+            return
+
+        # Account created in constructor
+        typer.echo(f"\n✅ Paper trading account initialized")
+        typer.echo(f"  Account ID:      default")
+        typer.echo(f"  Initial capital: ${initial_cash:,.2f}")
+        typer.echo(f"\nNext steps:")
+        typer.echo(f"  1. Run ingestion:  python -m app.run ingest")
+        typer.echo(f"  2. Generate signals: python -m app.run signals")
+        typer.echo(f"  3. Execute trades:  python -m app.run trade --strong-only")
+        typer.echo(f"  4. View report:    python -m app.run report")
+
+    except Exception as e:
+        logger.error(f"Failed to initialize paper account: {e}")
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("trade")
+def cmd_trade(
+    strong_only: bool = typer.Option(
+        False, "--strong-only", help="Only trade STRONG_BUY signals"
+    ),
+    include_normal: bool = typer.Option(
+        False, "--include-normal", help="Include NORMAL_BUY signals"
+    ),
+) -> None:
+    """Execute paper trades based on signals."""
+    logger.info("Running paper trading session")
+
+    try:
+        # Determine filter mode
+        if strong_only:
+            filter_mode = "strong_only"
+        elif include_normal:
+            filter_mode = "strong_and_normal"
+        else:
+            # Use default from config
+            filter_mode = config.SIGNAL_FILTER_MODE
+
+        trader = get_paper_trader(signal_filter_mode=filter_mode)
+        result = trader.run_trading_session()
+
+        typer.echo(f"\n✅ Paper trading session complete")
+        typer.echo(f"\n{'='*60}")
+        typer.echo(f"  Filter mode:       {filter_mode}")
+        typer.echo(f"  Signals evaluated: {result['signals_evaluated']}")
+        typer.echo(f"  Trades executed:   {result['trades_executed']}")
+        typer.echo(f"  Trades skipped:    {result['trades_skipped']}")
+        typer.echo(f"  Total deployed:    ${result['total_notional']:,.2f}")
+        typer.echo(f"\n  NAV before:        ${result['nav_before']:,.2f}")
+        typer.echo(f"  NAV after:         ${result['nav_after']:,.2f}")
+        typer.echo(f"  Current cash:      ${result['cash']:,.2f}")
+        typer.echo(f"  Current equity:    ${result['equity']:,.2f}")
+        typer.echo(f"{'='*60}")
+
+        if result['trades_executed'] > 0:
+            typer.echo(f"\n💡 Run 'python -m app.run report' to see detailed performance")
+
+    except Exception as e:
+        logger.error(f"Paper trading failed: {e}", exc_info=True)
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("report")
+def cmd_report() -> None:
+    """Generate daily performance report."""
+    logger.info("Generating daily report")
+
+    try:
+        report = generate_daily_report()
+        typer.echo(report)
+
+    except Exception as e:
+        logger.error(f"Report generation failed: {e}")
+        typer.echo(f"Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("daily")
+def cmd_daily(
+    strong_only: bool = typer.Option(
+        False, "--strong-only", help="Only trade STRONG_BUY signals"
+    ),
+    reset_db: bool = typer.Option(False, "--reset-db", help="Reset database first"),
+    reset_cache: bool = typer.Option(
+        False, "--reset-cache", help="Reset crawl cache before ingestion"
+    ),
+) -> None:
+    """Run daily workflow: ingest → signals → trade → report."""
+    logger.info("Running daily workflow")
+
+    # Use session logger to capture all output
+    with SessionLogger("daily") as session:
+        try:
+            session.log_section("DAILY WORKFLOW START")
+            session.log(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            session.log(f"Mode: {'STRONG_ONLY' if strong_only else config.SIGNAL_FILTER_MODE}")
+            session.log(f"Reset DB: {reset_db}")
+            session.log(f"Reset Cache: {reset_cache}")
+
+            # Step 1: Ingest
+            session.log_section("Step 1/4: Ingesting Congressional Trades")
+            typer.echo("\n📥 Step 1/4: Ingesting congressional trades...")
+            if reset_db:
+                session.log("⚠ Resetting database", level="WARNING")
+                db.reset_database()
+            if reset_cache:
+                session.log("⚠ Resetting cache", level="WARNING")
+                _reset_crawl_cache()
+
+            ingest_result = run_ingestion()
+            session.log_dict(
+                {
+                    "New events": ingest_result.get("new_events", 0),
+                    "Duplicates": ingest_result.get("duplicates", 0),
+                    "Total events": ingest_result.get("total_events", 0),
+                },
+                "Ingestion Results",
+            )
+            typer.echo(f"  ✓ Fetched {ingest_result.get('new_events', 0)} new events")
+
+            # Step 2: Generate signals
+            session.log_section("Step 2/4: Generating Trading Signals")
+            typer.echo("\n🎯 Step 2/4: Generating trading signals...")
+            signal_result = run_signal_generation()
+            signals_by_strength = signal_result.get("signals_by_strength", {})
+            session.log_dict(
+                {
+                    "New signals": signal_result.get("new_signals", 0),
+                    "STRONG": signals_by_strength.get("STRONG", 0),
+                    "NORMAL": signals_by_strength.get("NORMAL", 0),
+                    "WATCH": signals_by_strength.get("WATCH", 0),
+                    "IGNORE": signals_by_strength.get("IGNORE", 0),
+                },
+                "Signal Generation Results",
+            )
+            typer.echo(f"  ✓ Generated {signal_result.get('new_signals', 0)} new signals")
+
+            # Step 3: Execute trades
+            session.log_section("Step 3/4: Executing Paper Trades")
+            typer.echo("\n💰 Step 3/4: Executing paper trades...")
+            filter_mode = "strong_only" if strong_only else config.SIGNAL_FILTER_MODE
+            trader = get_paper_trader(signal_filter_mode=filter_mode)
+            trade_result = trader.run_trading_session()
+
+            session.log_dict(
+                {
+                    "Filter mode": filter_mode,
+                    "Signals evaluated": trade_result.get("signals_evaluated", 0),
+                    "Trades executed": trade_result.get("trades_executed", 0),
+                    "Trades skipped": trade_result.get("trades_skipped", 0),
+                    "Total deployed": f"${trade_result.get('total_notional', 0):,.2f}",
+                },
+                "Trading Results",
+            )
+
+            # Log individual trades
+            if trade_result.get("executed_trades"):
+                session.log("\nExecuted Trades:")
+                for trade in trade_result["executed_trades"]:
+                    session.log(
+                        f"  • {trade['side']} {trade['shares']:.2f} {trade['ticker']} "
+                        f"@ ${trade['price']:.2f} (${trade['notional']:.2f})"
+                    )
+
+            typer.echo(f"  ✓ Executed {trade_result['trades_executed']} trades")
+
+            # Step 4: Generate report
+            session.log_section("Step 4/4: Generating Performance Report")
+            typer.echo("\n📊 Step 4/4: Generating performance report...")
+            typer.echo("=" * 80)
+            report = generate_daily_report()
+            typer.echo(report)
+
+            # Also log report to session file
+            session.log("\nPerformance Report:")
+            for line in report.split("\n"):
+                if line.strip():
+                    session.log(f"  {line}")
+
+            # Get performance metrics for summary
+            account = get_paper_account()
+            market_data = get_market_data_provider()
+            performance = account.get_performance(market_data)
+
+            # Create and save daily summary
+            summary = create_daily_summary(
+                ingest_result=ingest_result,
+                signals_result=signal_result,
+                trade_result=trade_result,
+                performance=performance,
+            )
+            session.log("\n" + summary)
+            typer.echo(summary)
+
+            # Save to dedicated summary file
+            summary_file = save_daily_summary_to_file(summary)
+            session.log(f"\n✅ Daily summary saved to: {summary_file}")
+
+            typer.echo(f"\n✅ Daily workflow complete")
+            typer.echo(f"📄 Session log: {session.session_file}")
+
+        except Exception as e:
+            session.log(f"❌ ERROR: {e}", level="ERROR")
+            logger.error(f"Daily workflow failed: {e}", exc_info=True)
+            typer.echo(f"Error: {e}", err=True)
+            raise typer.Exit(code=1)
+
+
+@app.callback()
+def main(
+    log_level: str = typer.Option("INFO", help="Logging level"),
+    json_logs: bool = typer.Option(
+        False, "--json-logs", help="Output logs in JSON format"
+    ),
+) -> None:
+    """
+    Congress Trade Tracker - Automated trading based on congressional disclosures.
+
+    Set up logging and validate configuration before running commands.
+    """
+    # Setup logging
+    setup_logging(level=log_level, json_format=json_logs)
+
+    # Validate config
+    errors = config.validate()
+    if errors:
+        for error in errors:
+            if error.startswith("WARNING"):
+                logger.warning(error)
+            else:
+                logger.error(error)
+
+        # Don't fail on warnings
+        if any(not e.startswith("WARNING") for e in errors):
+            raise typer.Exit(code=1)
+
+
+def cli_main() -> None:
+    """Entry point for console script."""
+    app()
+
+
+if __name__ == "__main__":
+    app()

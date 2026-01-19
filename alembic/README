@@ -1,0 +1,37 @@
+Generic single-database configuration for Congress Trade Tracker.
+
+## Usage
+
+### Create a new migration
+```bash
+alembic revision -m "description of changes"
+```
+
+### Run migrations (upgrade to latest)
+```bash
+alembic upgrade head
+```
+
+### Downgrade one revision
+```bash
+alembic downgrade -1
+```
+
+### Show current revision
+```bash
+alembic current
+```
+
+### Show migration history
+```bash
+alembic history
+```
+
+## Note
+
+For the MVP, we're using the bootstrap_db.py script to initialize the schema.
+Alembic is set up for future schema evolution when we need to migrate
+existing databases without data loss.
+
+When adding SQLAlchemy models, update alembic/env.py to import your Base
+and set target_metadata = Base.metadata for autogenerate support.
