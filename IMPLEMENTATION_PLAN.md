@@ -1,5 +1,11 @@
 # Implementation Plan: Congress Trade Tracker + Auto-Copy Trader
 
+> **Note (Legacy Plan):** This document reflects the original Finnhub + IBKR MVP
+> scope and architecture. The project has since shifted to multi-source
+> congressional trade ingestion and paper trading workflows. For the current
+> roadmap and status, see `task_plan.md`, `MULTI_SOURCE_PLAN.md`, and
+> `PHASE_3_COMPLETE.md`.
+
 ## Executive Summary
 
 Building a production-lean MVP that monitors US Congress trade disclosures via Finnhub (free tier) and executes disciplined, automated trades through Interactive Brokers in PAPER mode first.
