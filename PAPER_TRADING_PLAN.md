@@ -10,21 +10,25 @@ Implement a complete paper trading system to:
 5. ✅ Track performance over time
 6. ✅ Generate performance reports
 
-## Current Status
+## Current Status (Historical Plan)
 
-### ✅ Already Implemented
+This plan describes the original gaps prior to Phase 3 implementation. The paper
+trading system is now implemented and ready for user testing; see `PHASE_3_COMPLETE.md`
+and `task_plan.md` for the current status and instructions.
+
+### ✅ Already Implemented (at time of this plan)
 - **Strategy Engine**: Scoring and signal generation (`app/strategy.py`)
 - **Portfolio Manager**: Position sizing and risk controls (`app/portfolio.py`)
 - **Database**: Tables for events, signals, positions, orders, fills, PnL (`app/db.py`)
 - **Multi-source Data**: HSW + FMP + CapitolTrades ingestion
 - **CLI Commands**: `ingest`, `signals`, etc. (`app/run.py`)
 
-### ❌ Missing Components
-1. **Market Data Integration**: No real stock prices yet
-2. **Paper Account State**: No virtual cash/equity tracking
-3. **Signal Filtering CLI**: No easy way to filter for STRONG_BUY only
-4. **Virtual Order Execution**: Need paper trading simulation
-5. **Performance Reports**: No PnL tracking/reporting over time
+### ✅ Components Implemented Since This Plan
+1. **Market Data Integration**: Real stock prices with caching
+2. **Paper Account State**: Virtual cash/equity tracking
+3. **Signal Filtering CLI**: STRONG_BUY filtering flags
+4. **Virtual Order Execution**: Paper trading simulation
+5. **Performance Reports**: PnL tracking and daily reporting
 
 ## Phase 1: Market Data Integration 📈
 

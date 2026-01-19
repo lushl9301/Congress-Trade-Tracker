@@ -220,7 +220,7 @@ DATA_SOURCE_STRATEGY=verify            # Cross-validate CT + RapidAPI
 
 ### Completed
 1. ✅ Phase 1: Multi-source data integration (HSW, FMP, CT)
-2. ✅ Phase 2: RapidAPI evaluation (tested, decided to skip for now)
+2. ✅ Phase 2: RapidAPI evaluation (tested, decided to integrate)
 3. ✅ Phase 3: Paper trading system (COMPLETE - ready for user testing)
 4. ✅ All core infrastructure, CLI commands, and reporting
 
@@ -279,7 +279,7 @@ Phase 4: IBKR Live Trading        ░░░░░░░░░░░░░░░�
 - Market data reliability (yfinance unofficial API)
 
 ### Low Confidence (Requires Testing) 🔬
-- Paper trading execution (not implemented yet)
+- Paper trading execution (implemented, needs live testing)
 - Performance tracking over time
 - IBKR integration (future phase)
 
@@ -288,12 +288,11 @@ Phase 4: IBKR Live Trading        ░░░░░░░░░░░░░░░�
 ## Decision Points
 
 ### ✅ Decision 1: RapidAPI Integration - RESOLVED
-**Decision**: SKIP for now
+**Decision**: INTEGRATE
 **Rationale**:
 - User tested externally and confirmed it provides trade data
-- Focus on paper trading validation first
-- Can integrate later as 2nd source for cross-validation
-- CapitolTrades sufficient as primary source
+- Use RapidAPI alongside CapitolTrades for cross-validation
+- HSW/FMP disabled due to payment requirements
 
 ### ✅ Decision 2: Paper Trading Parameters - RESOLVED
 **Decisions Made**:
