@@ -14,6 +14,10 @@ from app.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Retry configuration for database lock errors
+MAX_RETRIES = 3
+RETRY_DELAY = 0.5  # seconds
+
 
 class MarketDataProvider:
     """
@@ -81,27 +85,46 @@ class MarketDataProvider:
                     )
                     return price
 
-        # Fetch fresh price
-        try:
-            for candidate in candidates:
-                stock = self.yf.Ticker(candidate)
-                info = stock.info
+        # Fetch fresh price with retry logic for database locks
+        for attempt in range(MAX_RETRIES):
+            try:
+                for candidate in candidates:
+                    stock = self.yf.Ticker(candidate)
+                    info = stock.info
 
-                # Try multiple price fields (in order of preference)
-                price = (
-                    info.get("currentPrice")
-                    or info.get("regularMarketPrice")
-                    or info.get("previousClose")
-                )
+                    # Try multiple price fields (in order of preference)
+                    price = (
+                        info.get("currentPrice")
+                        or info.get("regularMarketPrice")
+                        or info.get("previousClose")
+                    )
 
-                if price and price > 0:
-                    self.cache[candidate] = (price, time.time())
-                    self.cache[raw_ticker] = (price, time.time())
-                    logger.debug(f"Fetched price for {candidate}: ${price:.2f}")
-                    return price
+                    if price and price > 0:
+                        self.cache[candidate] = (price, time.time())
+                        self.cache[raw_ticker] = (price, time.time())
+                        logger.debug(f"Fetched price for {candidate}: ${price:.2f}")
+                        return price
 
-        except Exception as e:
-            logger.warning(f"Failed to fetch price for {raw_ticker}: {e}")
+                # No valid price found
+                break
+
+            except Exception as e:
+                error_msg = str(e).lower()
+                if "database is locked" in error_msg or "operational" in error_msg:
+                    if attempt < MAX_RETRIES - 1:
+                        logger.warning(
+                            f"Database lock for {raw_ticker}, retrying in {RETRY_DELAY}s "
+                            f"(attempt {attempt + 1}/{MAX_RETRIES})"
+                        )
+                        time.sleep(RETRY_DELAY)
+                        continue
+                    else:
+                        logger.error(
+                            f"Failed to fetch price for {raw_ticker} after {MAX_RETRIES} retries: {e}"
+                        )
+                else:
+                    logger.warning(f"Failed to fetch price for {raw_ticker}: {e}")
+                break
 
         logger.warning(f"No valid price found for {raw_ticker}")
         return None
@@ -162,66 +185,90 @@ class MarketDataProvider:
             f"({len(tickers) - len(uncached_tickers)} cached)"
         )
 
-        try:
-            # Import pandas (required by yfinance)
-            import pandas as pd
+        # Fetch with retry logic for database locks
+        for attempt in range(MAX_RETRIES):
+            try:
+                # Import pandas (required by yfinance)
+                import pandas as pd
 
-            # Use yfinance download for batch fetching
-            if len(uncached_tickers) == 1:
-                # Single ticker
-                ticker = uncached_tickers[0]
-                try:
-                    data = self.yf.download(
-                        ticker, period="1d", progress=False
-                    )
-                    if not data.empty and "Close" in data.columns:
-                        price = float(data["Close"].iloc[-1])
-                        if price > 0:
-                            prices[ticker] = price
-                            self.cache[ticker] = (price, time.time())
+                # Use yfinance download for batch fetching
+                if len(uncached_tickers) == 1:
+                    # Single ticker
+                    ticker = uncached_tickers[0]
+                    try:
+                        data = self.yf.download(
+                            ticker, period="1d", progress=False
+                        )
+                        if not data.empty and "Close" in data.columns:
+                            price = float(data["Close"].iloc[-1])
+                            if price > 0:
+                                prices[ticker] = price
+                                self.cache[ticker] = (price, time.time())
+                            else:
+                                prices[ticker] = None
                         else:
                             prices[ticker] = None
-                    else:
+                    except Exception as e:
+                        error_msg = str(e).lower()
+                        if "database is locked" in error_msg or "operational" in error_msg:
+                            raise  # Re-raise to trigger outer retry
+                        logger.warning(f"Failed to fetch {ticker}: {e}")
                         prices[ticker] = None
-                except Exception as e:
-                    logger.warning(f"Failed to fetch {ticker}: {e}")
-                    prices[ticker] = None
 
-            else:
-                # Multiple tickers - batch fetch
-                data = self.yf.download(
-                    uncached_tickers, period="1d", progress=False
-                )
+                else:
+                    # Multiple tickers - batch fetch
+                    data = self.yf.download(
+                        uncached_tickers, period="1d", progress=False
+                    )
 
-                if not data.empty:
-                    # Handle multi-ticker response
-                    if "Close" in data.columns:
-                        # DataFrame structure depends on number of tickers
-                        for ticker in uncached_tickers:
-                            try:
-                                if len(uncached_tickers) == 1:
-                                    price = float(data["Close"].iloc[-1])
-                                else:
-                                    price = float(data["Close"][ticker].iloc[-1])
+                    if not data.empty:
+                        # Handle multi-ticker response
+                        if "Close" in data.columns:
+                            # DataFrame structure depends on number of tickers
+                            for ticker in uncached_tickers:
+                                try:
+                                    if len(uncached_tickers) == 1:
+                                        price = float(data["Close"].iloc[-1])
+                                    else:
+                                        price = float(data["Close"][ticker].iloc[-1])
 
-                                if pd.isna(price) or price <= 0:
+                                    if pd.isna(price) or price <= 0:
+                                        prices[ticker] = None
+                                    else:
+                                        prices[ticker] = price
+                                        self.cache[ticker] = (price, time.time())
+
+                                except (KeyError, IndexError, ValueError) as e:
+                                    logger.debug(
+                                        f"Price not available for {ticker}: {e}"
+                                    )
                                     prices[ticker] = None
-                                else:
-                                    prices[ticker] = price
-                                    self.cache[ticker] = (price, time.time())
 
-                            except (KeyError, IndexError, ValueError) as e:
-                                logger.debug(
-                                    f"Price not available for {ticker}: {e}"
-                                )
-                                prices[ticker] = None
+                # Success - break retry loop
+                break
 
-        except Exception as e:
-            logger.error(f"Batch price fetch failed: {e}")
-            # Fallback to individual fetches
-            for ticker in uncached_tickers:
-                if ticker not in prices:
-                    prices[ticker] = self.get_price(ticker)
+            except Exception as e:
+                error_msg = str(e).lower()
+                if "database is locked" in error_msg or "operational" in error_msg:
+                    if attempt < MAX_RETRIES - 1:
+                        logger.warning(
+                            f"Database lock during batch fetch, retrying in {RETRY_DELAY}s "
+                            f"(attempt {attempt + 1}/{MAX_RETRIES})"
+                        )
+                        time.sleep(RETRY_DELAY)
+                        continue
+                    else:
+                        logger.error(
+                            f"Batch price fetch failed after {MAX_RETRIES} retries: {e}"
+                        )
+                else:
+                    logger.error(f"Batch price fetch failed: {e}")
+
+                # Fallback to individual fetches
+                for ticker in uncached_tickers:
+                    if ticker not in prices:
+                        prices[ticker] = self.get_price(ticker)
+                break
 
         # Ensure all tickers have an entry (even if None)
         for ticker in tickers:

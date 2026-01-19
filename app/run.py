@@ -526,7 +526,16 @@ def cmd_report() -> None:
 
     try:
         report = generate_daily_report()
-        typer.echo(report)
+        # Handle Unicode characters on Windows console
+        try:
+            typer.echo(report)
+        except UnicodeEncodeError:
+            # Fallback to ASCII-safe output on Windows
+            import sys
+            safe_report = report.encode(
+                sys.stdout.encoding or 'utf-8', errors='replace'
+            ).decode(sys.stdout.encoding or 'utf-8')
+            typer.echo(safe_report)
 
     except Exception as e:
         logger.error(f"Report generation failed: {e}")

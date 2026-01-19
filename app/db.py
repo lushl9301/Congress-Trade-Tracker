@@ -31,9 +31,18 @@ class Database:
         """
         Context manager for database connections.
         Automatically commits on success and rolls back on error.
+        Includes timeout and WAL mode for better concurrency.
         """
-        conn = sqlite3.connect(str(self.db_path))
+        conn = sqlite3.connect(
+            str(self.db_path),
+            timeout=30.0,  # Wait up to 30 seconds for locks
+            check_same_thread=False,  # Allow multi-threaded access
+        )
         conn.row_factory = sqlite3.Row  # Enable column access by name
+
+        # Enable WAL mode for better concurrent read/write performance
+        conn.execute("PRAGMA journal_mode=WAL")
+
         try:
             yield conn
             conn.commit()
