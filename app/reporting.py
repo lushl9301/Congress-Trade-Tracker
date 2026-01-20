@@ -17,6 +17,7 @@ from app.logging import get_logger
 from app.market_data import get_market_data_provider
 from app.models import Position
 from app.paper_account import get_paper_account
+from app.rejection_stats import get_rejection_summary_from_db
 
 logger = get_logger(__name__)
 
@@ -57,6 +58,9 @@ class DailyReporter:
 
         # Performance Summary
         report.append("\n" + self._section_performance())
+
+        # Signal Generation Stats
+        report.append("\n" + self._section_signal_stats())
 
         # Current Portfolio
         report.append("\n" + self._section_portfolio())
@@ -104,6 +108,32 @@ class DailyReporter:
         lines.append("")
         lines.append(f"  Total Trades:     {perf['num_trades']:>12,d}")
         lines.append(f"  Open Positions:   {perf['num_positions']:>12,d}")
+
+        return "\n".join(lines)
+
+    def _section_signal_stats(self) -> str:
+        """Generate signal generation statistics section."""
+        lines = []
+        lines.append("📊 SIGNAL GENERATION STATS (Last 7 days)")
+        lines.append("-" * 80)
+
+        stats = get_rejection_summary_from_db(days=7)
+
+        lines.append(f"  Total events ingested:     {stats['total_events']:>6,d}")
+        lines.append(f"  Total signals generated:   {stats['total_signals']:>6,d}")
+        lines.append("")
+        lines.append(f"  Rejected (IGNORE):         {stats['rejected_ignore']:>6,d} ({stats['rejection_rate']:.1f}%)")
+        lines.append(f"  Passed filters:            {stats['passed_filters']:>6,d}")
+        lines.append("")
+        lines.append(f"  Generated BUY signals:     {stats['buy_signals']:>6,d}")
+        lines.append(f"  Generated SELL signals:    {stats['sell_signals']:>6,d}")
+        lines.append(f"  Generated WATCH signals:   {stats['watch']:>6,d}")
+
+        # Add context if high rejection rate
+        if stats['rejection_rate'] > 80 and stats['total_signals'] > 10:
+            lines.append("")
+            lines.append(f"  ⚠️  High rejection rate - most events filtered out")
+            lines.append(f"      Common reasons: disclosure delays, low amounts, or unsuitable tickers")
 
         return "\n".join(lines)
 

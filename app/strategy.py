@@ -9,6 +9,7 @@ from app.config import config
 from app.db import db
 from app.logging import get_logger
 from app.models import CongressTradeEvent, TradeSignal
+from app.rejection_stats import get_rejection_stats
 
 logger = get_logger(__name__)
 
@@ -86,6 +87,9 @@ class CongressTradeStrategy:
         elif event.delay_days <= 14:
             score += 5
             reasons.append(f"Recent disclosure ({event.delay_days} days)")
+        elif event.delay_days <= 21:
+            score += 2  # Lower score for older disclosures (handles holiday delays)
+            reasons.append(f"Delayed disclosure ({event.delay_days} days)")
 
         # === Scoring: Amount ===
         if event.amount_high >= 250000:
@@ -245,6 +249,11 @@ class CongressTradeStrategy:
         Returns:
             TradeSignal with IGNORE strength
         """
+        # Track rejection statistics
+        stats = get_rejection_stats()
+        for reason in reasons:
+            stats.record_rejection(reason)
+
         signal_id = TradeSignal.generate_signal_id(
             event.event_id, self.strategy_version
         )

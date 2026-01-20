@@ -109,7 +109,7 @@ class Config:
 
     # Strategy parameters
     STRATEGY_VERSION: str = "mvp_v1"
-    MAX_DELAY_DAYS: int = int(os.getenv("MAX_DELAY_DAYS", "14"))
+    MAX_DELAY_DAYS: int = int(os.getenv("MAX_DELAY_DAYS", "21"))  # Relaxed from 14 to handle holiday delays
     MIN_AMOUNT_HIGH: float = float(os.getenv("MIN_AMOUNT_HIGH", "5000"))
 
     # Position sizing

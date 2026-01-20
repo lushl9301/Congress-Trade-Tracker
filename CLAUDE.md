@@ -132,7 +132,7 @@ Only trade:
 - Exclude: OTC, penny stocks (use price/liquidity checks if data available; otherwise maintain a manual blacklist).
 
 Filters:
-- `delay_days` must be not null and <= `MAX_DELAY_DAYS` (default 14).
+- `delay_days` must be not null and <= `MAX_DELAY_DAYS` (default 21, relaxed from 14 to handle holiday delays).
 - `amount_high` must be >= `MIN_AMOUNT_HIGH` (default 5000).
 - `owner` weighting:
   - member: +10 score
@@ -143,11 +143,12 @@ Filters:
 ### 4.2 Scoring (0–100)
 Start with base score 50 then adjust:
 
-Freshness:
+Freshness (graduated scoring to prefer fresher disclosures):
 - if delay_days <= 2: +25
 - 3–7: +15
 - 8–14: +5
-- >14: reject (IGNORE)
+- 15–21: +2 (lower score for older disclosures, handles holiday delays)
+- >21: reject (IGNORE)
 
 Amount:
 - if amount_high >= 250000: +15

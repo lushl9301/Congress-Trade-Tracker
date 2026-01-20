@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(test:*)",
-      "Bash(python -m app.run:*)"
+      "Bash(python -m app.run:*)",
+      "Bash(python -c:*)"
     ]
   }
 }
